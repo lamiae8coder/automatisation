@@ -1,0 +1,7 @@
+.spacer{
+    flex: auto;
+}
+.custom-button {
+  color: #005cbb !important;
+  font-weight: bold;
+}

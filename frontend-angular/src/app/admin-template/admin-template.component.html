@@ -1,0 +1,80 @@
+<mat-toolbar color="primary">
+  <img src="/images/logo_societe.png" alt="Logo" width="40" height="40" style="margin-right: 10px;">
+    <button mat-icon-button (click)="drawer.toggle()">
+        <mat-icon>menu</mat-icon>
+    </button>
+    <span class="spacer"></span>
+    <button mat-button routerLink="/admin/home">Home</button>
+    <button *ngIf="authService.roles.includes('ADMIN')" mat-button [matMenuTriggerFor]="importMenu">
+      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+      Ajouter une Nouvelle Affaire
+    </button> 
+    <mat-menu #importMenu>
+        <button mat-menu-item routerLink="/admin/mise-a-jour">mise a jour</button>
+        <button mat-menu-item routerLink="/admin/loadPayments">MT</button>
+    </mat-menu> 
+    <button mat-button routerLink="/admin/profile">Menu de Suivi en cours et ancienne</button>
+    <button mat-button *ngIf="authService.authenticated==true">{{authService.username}}</button>
+    <button mat-button routerLink="/admin/profile">Profile</button>
+    <button (click)="logout()" mat-raised-button color="accent" >Logout</button>
+
+</mat-toolbar>
+<mat-drawer-container>
+  <mat-drawer style="width: 160px;" #drawer mode="side" position="start" opened="true">
+    <mat-nav-list>
+      <mat-list-item>
+        <button mat-button routerLink="/admin/dashboard">
+          <mat-icon>dashboard</mat-icon>
+          Dashboard
+        </button>
+      </mat-list-item>
+      <mat-list-item>
+        <button mat-button routerLink="/admin/students">
+          <mat-icon>dashboard</mat-icon>
+          Societe
+        </button>
+      </mat-list-item>
+      <mat-list-item>
+        <button mat-button routerLink="/admin/dessin-exterieur">
+          <mat-icon>dashboard</mat-icon>
+          Dessin <br>
+          Exterieur
+        </button>
+      </mat-list-item>
+    </mat-nav-list>
+  </mat-drawer>
+  <mat-drawer-content>
+    <div style="min-height: 600px">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-drawer-content>
+
+</mat-drawer-container> 
+
+<!-- 
+<mat-toolbar color="primary">
+  <img src="assets/logo.png" alt="Logo" width="40" height="40" style="margin-right: 10px;">
+
+  <button mat-button class="custom-button" routerLink="/admin/dashboard">Nouveau dossier</button>
+  
+  <button mat-button class="custom-button" routerLink="/admin/students">Dossiers en cours</button>
+  <button mat-button class="custom-button" routerLink="/admin/recherche-dossiers">Recherche dossiers</button>
+  <button mat-button class="custom-button" routerLink="/admin/eparapheur">eParapheur</button>
+
+  <button mat-button class="custom-button" [matMenuTriggerFor]="autresActionsMenu">
+    Autres Actions
+    <mat-icon>arrow_drop_down</mat-icon>
+  </button>
+
+  <mat-menu #autresActionsMenu="matMenu">
+    <button mat-menu-item routerLink="/admin/action1">Action 1</button>
+    <button mat-menu-item routerLink="/admin/action2">Action 2</button>
+  </mat-menu>
+
+  <button mat-button class="custom-button" routerLink="/admin/services">Services</button>
+
+  <span class="spacer"></span>
+
+  <button mat-button *ngIf="authService.authenticated">{{ authService.username }}</button>
+  <button (click)="logout()" mat-raised-button color="accent">Logout</button>
+</mat-toolbar>  -->
