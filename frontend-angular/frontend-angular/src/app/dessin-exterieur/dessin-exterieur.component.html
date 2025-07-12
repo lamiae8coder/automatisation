@@ -1,0 +1,103 @@
+
+
+
+<div class="main-container">
+  <div class="sidebar">
+
+    <!-- 🔘 Boutons principaux -->
+    <div class="top-buttons">
+      <button class="icon-btn" (click)="importTxtFile()">
+        <i class="fas fa-file-alt"></i> <span>Importer TXT</span>
+      </button>
+      <input type="file" id="txtFileInput" style="display: none;" (change)="handleTxtFileInput($event)" />
+
+      <button class="icon-btn" (click)="toggleDrawingMode()">
+        <i class="fas fa-pencil-alt"></i> <span>{{ isDrawing ? 'Désactiver dessin' : 'Activer dessin' }}</span>
+      </button>
+
+      <button class="icon-btn" (click)="importFilee()">
+        <i class="fas fa-upload"></i> <span>Importer shapefile 300m</span>
+      </button>
+      <input type="file" id="fileInputt" style="display: none;" (change)="handleFileInputt($event)" />
+
+      <button class="icon-btn info" (click)="toggleModalOnClick()">
+        <i class="fas fa-info-circle"></i> <span>Infos</span>
+      </button>
+    </div>
+
+    <hr />
+
+    <!-- 📍 Aller à une localisation -->
+    <div class="card coord-card">
+      <h3>📍 Aller à une localisation</h3>
+      <div class="xy-row">
+        <div class="xy-field">
+          <label for="inputX">X :</label>
+          <input id="inputX" type="number" [(ngModel)]="inputX" placeholder="Ex : 500000" />
+        </div>
+        <div class="xy-field">
+          <label for="inputY">Y :</label>
+          <input id="inputY" type="number" [(ngModel)]="inputY" placeholder="Ex : 300000" />
+        </div>
+      </div>
+      <button class="action-btn" (click)="goToCoordinates()">Aller</button>
+    </div>
+
+    <!-- 📐 Mesurer une distance -->
+    <div class="card">
+      <h3>📐 Mesurer une distance</h3>
+      <button class="action-btn" (click)="toggleDistanceMeasure()">
+        {{ isMeasuringDistance ? 'Annuler mesure' : 'Mesurer' }}
+      </button>
+      <div *ngIf="distanceResult" class="result-box">
+        {{ distanceResult }} mètres
+      </div>
+    </div>
+
+    <!-- 🗺️ Couches -->
+    <div class="card">
+      <h3>🗺️ Couches</h3>
+      <label>
+        <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />
+        OpenStreetMap
+      </label>
+      <div *ngFor="let shapefile of shapefileLayers; let i = index">
+        <label>
+          <input type="checkbox" [checked]="shapefile.visible" (change)="toggleSpecificLayer(i, getCheckedValue($event))" />
+          {{ shapefile.name }}
+        </label>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 🗺️ Carte -->
+  <div class="map-area">
+    <div id="map"></div>
+    <div class="coords">{{ cursorCoords }}</div>
+  </div>
+</div>
+
+<!-- 📌 Popup -->
+<div id="popup" class="ol-popup">
+  <div id="popup-content"></div>
+</div>
+ 
+<!-- 🪪 Modal Info -->
+<div class="modal fade" id="featureInfoModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Informations de l'objet</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-content">Chargement...</div> 
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+

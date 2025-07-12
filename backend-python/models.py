@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Numeric, String, Date, Float, Boolean, ForeignKey
 from database import Base
-
+from geoalchemy2 import Geometry
 class Person(Base):
     __tablename__ = "persons"
     id = Column(Integer, primary_key=True, index=True)
@@ -40,13 +40,26 @@ class Image(Base):
     __tablename__ = "images"
     id = Column(Integer, primary_key=True, index=True)
     affaire_id = Column(Integer, nullable=False)
-    file_path = Column(String, nullable=False)
-    type = Column(String, nullable=False)
+    file_path = Column(String(500), nullable=False)
+    type = Column(String(500), nullable=False)
 
 
 
 
+class DesignatedShape(Base):
+    __tablename__ = "designated_shapes"
+    id = Column(Integer, primary_key=True, index=True)
+    affaire_id = Column(Integer, nullable=False)
+    source_file = Column(String(500), nullable=False)
+    geom = Column(Geometry(geometry_type='POLYGON', srid=26191))
 
 
 
+class ImportedShapefile(Base):
+    __tablename__ = "imported_shapefiles"
 
+    id = Column(Integer, primary_key=True, index=True)
+    affaire_id = Column(Integer, nullable=False, index=True)
+    file_name = Column(String(500), nullable=True)
+    geom = Column(Geometry(geometry_type='MULTIPOLYGON', srid=26191))
+    

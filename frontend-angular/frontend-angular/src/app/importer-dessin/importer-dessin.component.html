@@ -1,0 +1,303 @@
+<!-- 
+
+
+<div class="main-container">
+  <div class="sidebar">
+
+    <div class="top-buttons">
+    <button class="icon-btn" (click)="importDXF()">
+    <i class="fas fa-drafting-compass"></i> <span>Importer DXF & Télécharger SHP</span>
+    </button>
+    <input type="file" id="dxfFileInput" style="display: none;" (change)="handleDXFFileInput($event)" />
+
+
+
+     
+
+      
+      <button class="icon-btn info" (click)="toggleModalOnClick()">
+        <i class="fas fa-info-circle"></i> <span>Infos</span>
+      </button>
+    </div>
+
+    <hr />
+
+
+
+
+    <div class="card">
+        <h3>🗺️ Couches</h3>
+
+        <label>
+            <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />
+            OpenStreetMap
+        </label>
+
+
+
+        <div *ngFor="let layer of layersList" class="layer-entry">
+            <label>
+              <input type="checkbox" [checked]="layer.visible" (change)="toggleLayerVisibility(layer)" />
+
+              <img 
+                *ngIf="layer.type === 'point'" 
+                src="/icons/point-icon.svg" 
+                class="layer-icon" 
+                alt="point" />
+
+              <img 
+                *ngIf="layer.type === 'line'" 
+                src="/icons/line-icon.svg" 
+                class="layer-icon" 
+                alt="line" />
+
+              <img 
+                *ngIf="layer.type === 'polygon'" 
+                src="/icons/polygon-icon.svg" 
+                class="layer-icon" 
+                alt="polygon" />
+
+              {{ layer.name }}
+            </label>
+            <button class="edit-btn" (click)="enableEditing(layer.layer)">
+              ✏️ Modifier
+            </button>
+            <button class="cancel-btn" (click)="disableEditing()">❌ Stop édition</button>
+
+
+          </div>
+
+
+    </div>
+
+
+
+    <div class="card">
+      <h3>📐 Mesurer une distance</h3>
+      <button class="action-btn" (click)="toggleDistanceMeasure()">
+        {{ isMeasuringDistance ? 'Annuler mesure' : 'Mesurer' }}
+      </button>
+      <div *ngIf="distanceResult" class="result-box">
+        {{ distanceResult }} mètres
+      </div>
+    </div>
+
+
+
+    <div class="card coord-card">
+      <h3>📍 Aller à une localisation</h3>
+      <div class="xy-row">
+        <div class="xy-field">
+          <label for="inputX">X :</label>
+          <input id="inputX" type="number" [(ngModel)]="inputX" placeholder="Ex : 500000" />
+        </div>
+        <div class="xy-field">
+          <label for="inputY">Y :</label>
+          <input id="inputY" type="number" [(ngModel)]="inputY" placeholder="Ex : 300000" />
+        </div>
+      </div>
+      <button class="action-btn" (click)="goToCoordinates()">Aller</button>
+    </div>
+
+  </div>
+
+  <div class="map-area">
+    <div id="map"></div>
+    <div class="coords">{{ cursorCoords }}</div>
+  </div>
+</div>
+
+📌 Popup
+<div id="popup" class="ol-popup">
+  <div id="popup-content"></div>
+</div>
+
+<div class="modal fade" id="featureInfoModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Informations de l'objet</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-content">Chargement...</div> 
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+ -->
+
+
+ <div class="main-container">
+  <div class="sidebar">
+
+    <!-- 🔘 Boutons principaux -->
+    <div class="top-buttons">
+      <!-- Importer DXF -->
+      <button class="icon-btn" (click)="importDXF()">
+        <i class="fas fa-drafting-compass"></i>
+        <span>Importer DXF & Télécharger SHP</span>
+      </button>
+      <input type="file" id="dxfFileInput" style="display: none;" (change)="handleDXFFileInput($event)" />
+
+      <!-- Bouton Infos -->
+      <button class="icon-btn info" (click)="toggleModalOnClick()">
+        <i class="fas fa-info-circle"></i> <span>Infos</span>
+      </button>
+    </div>
+
+    <hr />
+
+    <!-- 🗺️ GESTION DES COUCHES -->
+    <div class="card">
+      <h3>🗺️ Couches</h3>
+
+      <!-- OpenStreetMap -->
+      <label>
+        <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />
+        OpenStreetMap
+      </label>
+
+      <!-- Couches dynamiques -->
+      <div *ngFor="let layer of layersList" class="layer-entry">
+        <label>
+          <input type="checkbox" [checked]="layer.visible" (change)="toggleLayerVisibility(layer)" />
+
+          <img *ngIf="layer.type === 'point'" src="/icons/point-icon.svg" class="layer-icon" alt="point" />
+          <img *ngIf="layer.type === 'line'" src="/icons/line-icon.svg" class="layer-icon" alt="line" />
+          <img *ngIf="layer.type === 'polygon'" src="/icons/polygon-icon.svg" class="layer-icon" alt="polygon" />
+
+          {{ layer.name }}
+        </label>
+
+       
+        <div class="layer-actions">
+        
+          <button class="edit-btn"
+                  (click)="toggleEditing(layer.layer)">
+            ✏️ {{ editingLayer === layer.layer ? 'Stop' : 'Éditer' }}
+          </button>
+
+
+          <button class="edit-btn"
+                  (click)="enableDeleteMode(layer.layer)"
+                  [disabled]="editingLayer !== layer.layer">
+            🗑️ Supprimer un objet
+          </button>
+
+
+          <button class="edit-btn"
+                (click)="enableMultiSelect(layer.layer)"
+                [disabled]="editingLayer !== layer.layer">
+            🖱️ Multi-sélection
+          </button>
+          <button class="edit-btn" 
+                (click)="enableClassification(layer.layer)"
+                [disabled]="editingLayer !== layer.layer">
+            🧬 Classifier
+          </button>
+
+
+       
+
+          <button (click)="enableSelection(layer.layer)"
+                  title="Sélectionner les entités de cette couche"
+                  [disabled]="editingLayer !== layer.layer">
+            🖱️
+          </button>
+
+          <button (click)="moveSelectedFeaturesTo(layer.layer)"
+                  title="Déplacer ici"
+                  [disabled]="editingLayer !== layer.layer">
+            ➡️
+          </button>
+
+          
+
+        </div>
+
+      </div>
+    </div>
+    <div style="margin: 10px 0;">
+      <button class="icon-btn" (click)="startConnectingLines()" [disabled]="isDrawing">
+        <i class="fas fa-project-diagram"></i>
+        <span>Dessiner & relier lignes (polygone)</span>
+      </button>
+       <!-- Nouveau bouton pour arrêter -->
+      <button class="icon-btn warning" (click)="cancelDrawing()" *ngIf="isDrawing">
+        <i class="fas fa-times-circle"></i>
+        <span>Annuler dessin</span>
+      </button>
+    </div>
+
+    <!-- 🛠️ SÉLECTION MULTIPLE -->
+    <div class="card">
+      <h3>🛠️ Sélection multiple</h3>
+      <button class="action-btn" (click)="deleteSelectedFeatures()">🗑️ Supprimer sélection</button>
+      <button class="action-btn warning" (click)="disableSelection()">❌ Stop sélection</button>
+       <!-- 🎯 Bouton pour sélectionner des objets de cette couche -->
+    
+    </div>
+
+    <!-- 📐 MESURER UNE DISTANCE -->
+    <div class="card">
+      <h3>📐 Mesurer une distance</h3>
+      <button class="action-btn" (click)="toggleDistanceMeasure()">
+        {{ isMeasuringDistance ? 'Annuler mesure' : 'Mesurer' }}
+      </button>
+      <div *ngIf="distanceResult" class="result-box">
+        {{ distanceResult }} mètres
+      </div>
+    </div>
+
+    <!-- 📍 ALLER À UNE LOCALISATION -->
+    <div class="card coord-card">
+      <h3>📍 Aller à une localisation</h3>
+      <div class="xy-row">
+        <div class="xy-field">
+          <label for="inputX">X :</label>
+          <input id="inputX" type="number" [(ngModel)]="inputX" placeholder="Ex : 500000" />
+        </div>
+        <div class="xy-field">
+          <label for="inputY">Y :</label>
+          <input id="inputY" type="number" [(ngModel)]="inputY" placeholder="Ex : 300000" />
+        </div>
+      </div>
+      <button class="action-btn" (click)="goToCoordinates()">Aller</button>
+    </div>
+  </div>
+
+  <!-- 🗺️ ZONE DE CARTE -->
+  <div class="map-area">
+    <div id="map"></div>
+    <div class="coords">{{ cursorCoords }}</div>
+  </div>
+</div>
+
+<!-- 📌 Popup (désactivé par défaut) -->
+<!--
+<div id="popup" class="ol-popup">
+  <div id="popup-content"></div>
+</div>
+-->
+
+<!-- 🪪 MODAL INFO -->
+<div class="modal fade" id="featureInfoModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Informations de l'objet</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-content">Chargement...</div> 
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>

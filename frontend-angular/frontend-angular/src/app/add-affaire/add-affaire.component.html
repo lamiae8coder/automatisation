@@ -1,0 +1,41 @@
+<!-- <div class="top-bar horizontal-buttons">
+  <button  routerLink="/admin/add-affaire/mise-a-jour">Gestion des données</button> 
+  <button  routerLink="/admin/add-affaire/dessin-exterieur">Dessin extérieur</button>
+  <button >Dessin intérieur</button>
+
+
+</div>
+
+
+    <div >
+      <router-outlet></router-outlet>
+    </div> -->
+
+
+
+    <div class="top-step-bar">
+  <div class="step" routerLink="/admin/add-affaire/mise-a-jour" routerLinkActive="active-step">
+    <div class="circle">1</div>
+    <div class="label">Gestion des données</div>
+  </div>
+
+  <div class="step" routerLink="/admin/add-affaire/dessin-exterieur" routerLinkActive="active-step">
+    <div class="circle">2</div>
+    <div class="label">Dessin extérieur</div>
+  </div>
+
+   <div class="step" routerLink="/admin/add-affaire/importer-dessin" routerLinkActive="active-step">
+    <div class="circle">3</div>
+    <div class="label">importer le dessin</div>
+  </div>
+
+  <div class="step" routerLink="/admin/add-affaire/dessin-interieur" routerLinkActive="active-step">
+    <div class="circle">4</div>
+    <div class="label">Dessin intérieur</div>
+  </div>
+</div>
+
+<!-- Contenu de la page affiché ici -->
+<div class="step-content">
+  <router-outlet></router-outlet>
+</div>

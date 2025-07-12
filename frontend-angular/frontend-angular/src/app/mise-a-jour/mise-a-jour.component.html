@@ -1,0 +1,407 @@
+
+
+
+<form [formGroup]="affaireForm" (ngSubmit)="onSubmit()" class="affaire-form">
+
+  <mat-card class="section-card">
+    <mat-card-title>INFORMATIONS GÉNÉRALES</mat-card-title>
+    <div class="form-grid">
+
+      <mat-form-field appearance="outline">
+        <mat-label>N° Titre de MEC</mat-label>
+        <input matInput formControlName="titremec" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Propriété dite (Fr)</mat-label>
+        <input matInput formControlName="proprietefr" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Propriété dite (Ar)</mat-label>
+        <input matInput formControlName="proprietear" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Situation (Fr)</mat-label>
+        <input matInput formControlName="situationfr" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Situation (Ar)</mat-label>
+        <input matInput formControlName="situationar" required>
+      </mat-form-field>
+
+      <!-- <mat-form-field appearance="outline">
+        <mat-label>Plan levé le (date du BI au plan initial)</mat-label>
+        <input matInput [matDatepicker]="picker1" formControlName="plandate" [value]="affaireForm.get('plandate')?.value | date:'dd MMMM yyyy':'':'fr'" required>
+        <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+        <mat-datepicker #picker1></mat-datepicker>
+      </mat-form-field> -->
+    
+      <!-- ✅ Choix du type de date -->
+      <mat-radio-group [(ngModel)]="dateType" name="dateType">
+        <mat-radio-button value="complete">Date complète (Jour/Mois/Année)</mat-radio-button>
+        <mat-radio-button value="monthYear">Date partielle (Mois/Année)</mat-radio-button>
+      </mat-radio-group>
+
+      <!-- ✅ Date complète -->
+      <div *ngIf="dateType === 'complete'">
+        <mat-form-field appearance="outline">
+          <mat-label>Plan levé le (date complète)</mat-label>
+          <input matInput [matDatepicker]="picker1" formControlName="plandate">
+          <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+          <mat-datepicker #picker1></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <!-- ✅ Mois / Année -->
+      <div *ngIf="dateType === 'monthYear'">
+        <mat-form-field appearance="outline">
+          <mat-label>Date partielle (Mois/Année)</mat-label>
+          <input matInput [value]="monthYearDisplay" readonly (click)="monthPicker.open()">
+          <mat-datepicker-toggle matSuffix [for]="monthPicker"></mat-datepicker-toggle>
+          <mat-datepicker
+            #monthPicker
+            startView="multi-year"
+            (monthSelected)="chosenMonthHandler($event, monthPicker)"
+            panelClass="month-picker"
+          ></mat-datepicker>
+        </mat-form-field>
+      </div>
+      
+
+
+
+
+
+    </div>
+  </mat-card>
+
+  <mat-card class="section-card">
+    <mat-card-title>RÉFÉRENCES CADASTRALES</mat-card-title>
+    <div class="form-grid">
+
+      <mat-form-field appearance="outline">
+        <mat-label>Mappe (à l'intérieur du cadre du plan)</mat-label>
+        <input matInput formControlName="mappecadre" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Mappe de repérage (à l'extérieur du cadre)</mat-label>
+        <input matInput formControlName="mappereperage" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Titre origine / Réquisition origine</mat-label>
+        <input matInput formControlName="titreorigine" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Surface en (m²)</mat-label>
+        <input matInput type="number" formControlName="surface" required pattern="^[0-9]*$" (keypress)="onlyNumber($event)">
+      </mat-form-field>
+
+      <!-- <mat-form-field appearance="outline">
+        <mat-label>Nature du Travail</mat-label>
+        <input matInput formControlName="natureTravail" required>
+      </mat-form-field> -->
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nature du Travail</mat-label>
+        <mat-select formControlName="naturetravail" required>
+            <mat-option *ngFor="let nature of naturesTravail" [value]="nature">{{ nature }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+
+    </div>
+  </mat-card>
+
+  <mat-card class="section-card">
+    <mat-card-title>DONNÉES DE MEC</mat-card-title>
+    <div class="form-grid">
+
+      <mat-form-field appearance="outline">
+        <mat-label>N° de SD</mat-label>
+        <input matInput type="number" formControlName="numerosd" required pattern="^[0-9]*$" (keypress)="onlyNumber($event)">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date de MEC</mat-label>
+        <input matInput [matDatepicker]="picker2" formControlName="datemec" [value]="affaireForm.get('datemec')?.value | date:'dd MMMM yyyy':'':'fr'" required>
+        <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+        <mat-datepicker #picker2></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Service du Cadastre</mat-label>
+        <mat-select formControlName="servicecadastre" required>
+          <mat-option *ngFor="let service of services" [value]="service">{{ service }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- <mat-form-field appearance="outline">
+        <mat-label>Consistance</mat-label>
+        <mat-select formControlName="consistance" required>
+          <mat-option *ngFor="let consistance of consistances" [value]="consistance">{{ consistance }}</mat-option>
+        </mat-select>
+      </mat-form-field> -->
+
+      <mat-form-field appearance="outline">
+        <mat-label>Consistance</mat-label>
+        <input type="text" matInput formControlName="consistance" [matAutocomplete]="auto" required>
+
+        <mat-autocomplete #auto="matAutocomplete">
+            <mat-option *ngFor="let consistance of consistances" [value]="consistance">
+            {{ consistance }}
+            </mat-option>
+        </mat-autocomplete> 
+      </mat-form-field>
+
+
+      <mat-form-field appearance="outline">  
+        <mat-label>Charges et Servitudes</mat-label>
+        <input matInput formControlName="charges" required>
+      </mat-form-field>
+
+    </div>
+  </mat-card>
+
+  <mat-card class="section-card">
+    <mat-card-title>EMPIÉTEMENT ET PROPRIÉTAIRE</mat-card-title>
+    <div class="form-grid">
+
+      <mat-form-field appearance="outline">
+        <mat-label>Empiètement</mat-label> 
+        <mat-select formControlName="empietement" required>
+          
+          <mat-option [value]="true">OUI</mat-option>
+          <mat-option [value]="false">NON</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field *ngIf="affaireForm.get('empietement')?.value === true" appearance="outline">
+        <mat-label>Surface d'empiètement</mat-label>
+        <input matInput type="number" formControlName="surfaceempietement"  pattern="^[0-9]*$" (keypress)="onlyNumber($event)">
+      </mat-form-field>
+
+      <!-- <mat-form-field appearance="outline">
+        <mat-label>Propriétaire</mat-label>
+        <input matInput formControlName="proprietaire" required>
+      </mat-form-field> -->
+
+    
+      <mat-form-field appearance="outline">
+        <mat-label>Nom et Prenom</mat-label>
+        <input matInput formControlName="nometprenom" required>
+      </mat-form-field>
+
+
+      <mat-form-field appearance="outline">
+        <mat-label>CIN</mat-label>
+        <input matInput formControlName="cin" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Qualité</mat-label>
+        <input type="text" matInput formControlName="qualite" [matAutocomplete]="autoQualite" required>
+
+        <mat-autocomplete #autoQualite="matAutocomplete">
+          <mat-option *ngFor="let qualite of qualites" [value]="qualite">
+            {{ qualite }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+
+    </div>
+  </mat-card>
+
+  <div class="submit-btn">
+    <button mat-raised-button color="primary" type="submit">
+      <mat-icon>send</mat-icon> Enregistrer l'affaire
+    </button>
+  </div>
+
+  
+
+</form>
+
+
+
+ 
+<!-- 
+<form [formGroup]="imageForm" (ngSubmit)="submitForm()" enctype="multipart/form-data">
+
+  <div>
+    <label>Sélectionner plusieurs images :</label>
+    <input type="file" (change)="onFilesSelected($event)" multiple accept="image/*" />
+  </div>
+
+  <div style="margin: 15px 0;">
+    <button mat-stroked-button color="primary" type="button" (click)="assignTypeToSelected('façade')">Façade</button>
+    <button mat-stroked-button color="accent" type="button" (click)="assignTypeToSelected('terrasse')">Terrasse</button>
+    <button mat-stroked-button color="warn" type="button" (click)="assignTypeToSelected('la_cour')">La cour</button>
+  </div>
+
+  <div class="images-grid" style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+    <div *ngFor="let image of previews; let i = index"
+     class="image-item"
+     (click)="toggleImageSelection(i)"
+     [ngClass]="{'selected': image.selected}"
+     [style.border]="image.selected ? '2px solid #3f51b5' : '1px solid #ccc'"
+     style="padding: 10px; border-radius: 6px; cursor: pointer; max-width: 160px;">
+
+
+      <img [src]="image.preview" alt="Aperçu image"
+           style="width: 140px; height: auto; border-radius: 4px;" />
+
+      <p style="font-size: 13px; color: #555;">
+        Type :
+        <strong *ngIf="image.type; else notDefined">{{ image.type }}</strong>
+        <ng-template #notDefined><em>Non défini</em></ng-template>
+      </p>
+    </div>
+  </div>
+
+  <button mat-raised-button color="primary" type="submit" style="margin-top: 20px;">
+    Ajouter Images
+  </button>
+
+</form>
+
+<div *ngIf="confirmationMessage" style="margin-top: 10px; color: green;">
+  {{ confirmationMessage }}
+</div>
+
+ -->
+
+
+
+<form [formGroup]="imageForm" (ngSubmit)="submitForm()" enctype="multipart/form-data">
+
+  <!-- Choix des fichiers -->
+  <div style="margin-bottom: 15px;">
+    <label style="font-weight: bold;">📷 Sélectionner plusieurs images :</label>
+    <input #fileInput type="file" (change)="onFilesSelected($event)" multiple accept="image/*" />
+  </div>
+
+  <!-- Boutons pour assigner un type -->
+  <div style="margin: 15px 0;">
+    <button mat-stroked-button color="primary" type="button" (click)="assignTypeToSelected('façade')">Façade</button>
+    <button mat-stroked-button color="accent" type="button" (click)="assignTypeToSelected('terrasse')">Terrasse</button>
+    <button mat-stroked-button color="warn" type="button" (click)="assignTypeToSelected('la_cour')">La cour</button>
+  </div>
+
+  <!-- Grille des aperçus -->
+  <div class="images-grid" style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+    <div *ngFor="let image of previews; let i = index"
+         class="image-item"
+         (click)="toggleImageSelection(i)"
+         [ngClass]="{'selected': image.selected}"
+         style="flex: 1 1 calc(33.33% - 20px); box-sizing: border-box; max-width: calc(33.33% - 20px); border: 2px solid transparent; padding: 10px; border-radius: 6px; cursor: pointer;">
+
+      <img [src]="image.preview" alt="Aperçu image"
+           style="width: 100%; height: 220px; object-fit: cover; border-radius: 6px;" />
+
+      <p style="font-size: 14px; margin-top: 8px; text-align: center; color: #333;">
+        Type :
+        <strong *ngIf="image.type; else notDefined">{{ image.type }}</strong>
+        <ng-template #notDefined><em>Non défini</em></ng-template>
+      </p>
+    </div>
+  </div>
+
+  <!-- Conteneur boutons de contrôle alignés -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
+    <button type="button" mat-stroked-button color="warn" (click)="clearAllImages()" [disabled]="previews.length === 0">
+      <mat-icon>delete_forever</mat-icon> Effacer toutes les images
+    </button>
+
+
+    <button mat-raised-button color="primary" type="submit">
+       Ajouter les Images
+    </button>
+  </div>
+
+</form>
+
+<!-- Message de confirmation -->
+<div *ngIf="confirmationMessage" style="margin-top: 20px;">
+  <div style="background-color: #e8f5e9; padding: 10px; border-left: 5px solid green; border-radius: 5px; color: #2e7d32;">
+    {{ confirmationMessage }}
+  </div>
+</div>
+
+
+
+
+
+
+
+
+<!-- upload images -->
+
+<!-- 
+
+<mat-card class="section-card">
+  <mat-card-title>TELECHARGER DES IMAGES</mat-card-title>
+
+  <br>
+
+  
+  <br>
+
+  <input type="file" (change)="onFilesSelected($event)" multiple accept="image/*" />
+
+  <br>
+  <div class="buttons-assign-type">
+    <button mat-raised-button color="primary" (click)="assignTypeToSelected('façade')">Façade</button>
+    <button mat-raised-button color="accent" (click)="assignTypeToSelected('terrasse')">Terrasse</button>
+    <button mat-raised-button color="warn" (click)="assignTypeToSelected('la_cour')">La cour</button>
+  </div>
+
+  <div class="images-grid">
+    <div *ngFor="let image of images; let i = index" class="image-item" [class.selected]="image.selected" (click)="toggleSelectImage(i)">
+      <img [src]="image.preview" alt="Aperçu image" class="image-preview-display" />
+      <p class="image-type-label">{{ image.type || 'Type non défini' }}</p>
+    </div>
+  </div>
+ 
+  <div class="buttons-clear-all" style="margin-top: 10px;">
+    <button mat-stroked-button color="warn" (click)="clearAllImages()" [disabled]="images.length === 0">
+      <mat-icon>delete_forever</mat-icon> Effacer toutes les images
+    </button>
+  </div>
+ 
+
+  <div class="submit-btn">
+    <button
+      mat-raised-button
+      type="submit"
+      color="primary"
+      [disabled]="images.length < 4 || images.length > 6"
+      (click)="submit()"
+      
+    >
+      <mat-icon>send</mat-icon> Soumettre
+    </button>
+  </div>
+
+  <p *ngIf="images.length < 4" style="color:rgb(207, 112, 112);">
+    Veuillez ajouter au moins 4 photos.
+  </p>
+
+  <p *ngIf="images.length > 6" style="color:rgb(207, 112, 112);">
+    Vous ne pouvez pas ajouter plus de 6 photos.
+  </p>
+</mat-card>
+
+
+ -->
+
+
+
+
+

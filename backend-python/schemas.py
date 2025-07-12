@@ -44,40 +44,11 @@ class ImageCreate(BaseModel):
 
 
 
-# from pydantic import BaseModel, Field
-# from datetime import date
-# from typing import Optional
-# from decimal import Decimal
+class ShowImage(BaseModel):
+    id: int
+    affaire_id: int
+    file_path: str
+    type: str
 
-
-# class AffaireBase(BaseModel):
-#     titre_mec: str
-#     propriete_fr: str
-#     propriete_ar: str
-#     situation_fr: str
-#     situation_ar: str
-#     plan_date: date
-#     mappe_cadre: str
-#     mappe_reperage: str
-#     titre_origine: str
-#     surface: Decimal
-#     nature_travail: str
-#     numero_sd: int
-#     date_mec: date
-#     service_cadastre: str
-#     consistance: str
-#     charges: str
-#     empietement: bool
-#     nom_prenom: str
-#     cin: str
-#     qualite: str
-
-# class AffaireCreate(AffaireBase):
-#     surfaceempietement: Optional[Decimal] = None
-
-# class Affaire(AffaireBase):
-#     id: int
-#     surfaceempietement: Optional[Decimal]
-
-#     class Config:
-#         orm_mode = True
+    class Config:
+        orm_mode = True

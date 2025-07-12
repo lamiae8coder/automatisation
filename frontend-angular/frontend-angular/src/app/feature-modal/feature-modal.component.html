@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Informations de l'objet</h2>
+<mat-dialog-content>
+  <table class="table table-bordered table-striped" *ngIf="data">
+    <thead>
+      <tr><th>Champ</th><th>Valeur</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let key of objectKeys(data)">
+        <td>{{ key }}</td>
+        <td>{{ data[key] }}</td>
+      </tr>  
+    </tbody>
+  </table>
+</mat-dialog-content>  
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Fermer</button>
+</mat-dialog-actions>

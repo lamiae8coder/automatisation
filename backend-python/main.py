@@ -1,470 +1,39 @@
-# # from fastapi import FastAPI
-# # from fastapi.middleware.cors import CORSMiddleware
-# # from sqlalchemy import create_engine, Column, Integer, String, Date, Float
-# # from sqlalchemy.orm import sessionmaker, declarative_base
-# # from pydantic import BaseModel
-# # from typing import Optional
-# # from datetime import date
-
-# # app = FastAPI()
-
-# # # Autoriser Angular (CORS)
-# # app.add_middleware(
-# #     CORSMiddleware,
-# #     allow_origins=["http://localhost:4200"],
-# #     allow_credentials=True,
-# #     allow_methods=["*"],
-# #     allow_headers=["*"],
-# # )
-
-# # # Connexion PostgreSQL
-# # DATABASE_URL = "postgresql://postgres:geoinfo@localhost:5432/maintenance_luminaires"
-# # engine = create_engine(DATABASE_URL)
-# # SessionLocal = sessionmaker(bind=engine)
-# # Base = declarative_base()
-
-# # # ✅ Modèle SQLAlchemy
-# # class Affaire(Base):
-# #     __tablename__ = "affaires"
-
-# #     id = Column(Integer, primary_key=True, index=True)
-
-# #     titreMec = Column(String)
-# #     proprieteFr = Column(String)
-# #     proprieteAr = Column(String)
-# #     situationFr = Column(String)
-# #     situationAr = Column(String)
-# #     planDate = Column(Date)
-
-# #     mappeCadre = Column(String)
-# #     mappeReperage = Column(String)
-# #     titreOrigine = Column(String)
-# #     surface = Column(Float)
-# #     natureTravail = Column(String)
-
-# #     numeroSd = Column(Integer)
-# #     dateMec = Column(Date)
-# #     serviceCadastre = Column(String)
-# #     consistance = Column(String)
-# #     charges = Column(String)
-
-# #     empietement = Column(String)
-# #     surfaceEmpietement = Column(Float, nullable=True)
-# #     proprietaire = Column(String)
-
-# # # ✅ Création des tables
-# # Base.metadata.create_all(bind=engine)
-
-# # # ✅ Pydantic pour validation d'entrée
-# # class AffaireCreate(BaseModel):
-# #     titreMec: str
-# #     proprieteFr: str
-# #     proprieteAr: str
-# #     situationFr: str
-# #     situationAr: str
-# #     planDate: date
-
-# #     mappeCadre: str
-# #     mappeReperage: str
-# #     titreOrigine: str
-# #     surface: float
-# #     natureTravail: str
-
-# #     numeroSd: int
-# #     dateMec: date
-# #     serviceCadastre: str
-# #     consistance: str
-# #     charges: str
-
-# #     empietement: str
-# #     surfaceEmpietement: Optional[float] = None
-# #     proprietaire: str
-
-# # # ✅ Endpoint POST pour enregistrement
-# # @app.post("/affaires")
-# # def create_affaire(affaire: AffaireCreate):
-# #     db = SessionLocal()
-# #     db_affaire = Affaire(**affaire.dict())
-# #     db.add(db_affaire)
-# #     db.commit()
-# #     db.refresh(db_affaire)
-# #     db.close()
-# #     return {"message": "Affaire ajoutée avec succès", "id": db_affaire.id}
-
-# from fastapi import FastAPI, File, UploadFile, Form
-# from fastapi.middleware.cors import CORSMiddleware
-# from sqlalchemy import create_engine, Column, Integer, String, Date, Float, ForeignKey
-# from sqlalchemy.orm import sessionmaker, declarative_base, relationship
-# from pydantic import BaseModel
-# from typing import Optional, List
-# from datetime import date
-# import shutil
-# import os
-
-# app = FastAPI()
-
-# # ✅ Configurer CORS pour Angular
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://localhost:4200"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # ✅ Connexion PostgreSQL
-# DATABASE_URL = "postgresql://postgres:geoinfo@localhost:5432/db_cadastre_mec"
-# engine = create_engine(DATABASE_URL)
-# SessionLocal = sessionmaker(bind=engine)
-# Base = declarative_base()
-
-# # ✅ Modèle SQLAlchemy - Table Affaire
-# class Affaire(Base):
-#     __tablename__ = "affaires"
-
-#     id = Column(Integer, primary_key=True, index=True)
-#     titreMec = Column("titre_mec", String)
-#     proprieteFr = Column("propriete_fr", String)
-#     proprieteAr = Column("propriete_ar", String)
-#     situationFr = Column("situation_fr", String)
-#     situationAr = Column("situation_ar", String)
-#     planDate = Column("plan_date", Date)
-#     mappeCadre = Column("mappe_cadre", String)
-#     mappeReperage = Column("mappe_reperage", String)
-#     titreOrigine = Column("titre_origine", String)
-#     surface = Column("surface", Float)
-#     natureTravail = Column("nature_travail", String)
-#     numeroSd = Column("numero_sd", Integer)
-#     dateMec = Column("date_mec", Date)
-#     serviceCadastre = Column("service_cadastre", String)
-#     consistance = Column("consistance", String)
-#     charges = Column("charges", String)
-#     empietement = Column("empietement", String)  # ou Boolean si tu l'envoies bien comme bool
-#     surfaceEmpietement = Column("surface_empietement", Float, nullable=True)
-#     nometprenom = Column("nom_prenom", String)
-#     cin = Column("cin", String)
-#     qualite = Column("qualite", String)
-
-#     # images = relationship("AffaireImage", back_populates="affaire")
-
-# # ✅ Modèle SQLAlchemy - Table Images
-# # class AffaireImage(Base):
-# #     __tablename__ = "images"
-
-# #     id = Column(Integer, primary_key=True, index=True)
-# #     image_path = Column(String)
-# #     image_type = Column(String)
-# #     affaire_id = Column(Integer, ForeignKey("affaires.id"))
-
-# #     affaire = relationship("Affaire", back_populates="images")
-
-# # ✅ Créer les tables
-# Base.metadata.create_all(bind=engine)
-
-# # ✅ Endpoint pour l'ajout d'une affaire avec images
-# @app.post("/affaires")
-# async def create_affaire_with_images(
-#     titreMec: str = Form(...),
-#     proprieteFr: str = Form(...),
-#     proprieteAr: str = Form(...),
-#     situationFr: str = Form(...),
-#     situationAr: str = Form(...),
-#     planDate: date = Form(...),
-
-#     mappeCadre: str = Form(...),
-#     mappeReperage: str = Form(...),
-#     titreOrigine: str = Form(...),
-#     surface: float = Form(...),
-#     natureTravail: str = Form(...),
-
-#     numeroSd: int = Form(...),
-#     dateMec: date = Form(...),
-#     serviceCadastre: str = Form(...),
-#     consistance: str = Form(...),
-#     charges: str = Form(...),
-
-#     empietement: str = Form(...),
-#     surfaceEmpietement: Optional[float] = Form(None),
-    
-#     cin: str = Form(...),
-#     nometprenom: str = Form(...),
-#     qualite: str = Form(...)
-
-
-#     # image_types: List[str] = Form(...),
-#     # images: List[UploadFile] = File(...)
-# ):
-#     db = SessionLocal()
-
-#     # ✅ Créer l'affaire
-#     affaire = Affaire(
-#         titreMec=titreMec,
-#         proprieteFr=proprieteFr,
-#         proprieteAr=proprieteAr,
-#         situationFr=situationFr,
-#         situationAr=situationAr,
-#         planDate=planDate,
-#         mappeCadre=mappeCadre,
-#         mappeReperage=mappeReperage,
-#         titreOrigine=titreOrigine,
-#         surface=surface,
-#         natureTravail=natureTravail,
-#         numeroSd=numeroSd,
-#         dateMec=dateMec,
-#         serviceCadastre=serviceCadastre,
-#         consistance=consistance,
-#         charges=charges,
-#         empietement=empietement,
-#         surfaceEmpietement=surfaceEmpietement,
-#         nometprenom=nometprenom,
-#         cin=cin,
-#         qualite=qualite
-#     )
-#     db.add(affaire)
-#     db.commit()
-#     db.refresh(affaire)
-
-#     # ✅ Dossier pour stocker les images
-#     # image_folder = "uploaded_images"
-#     # os.makedirs(image_folder, exist_ok=True)
-
-#     # ✅ Enregistrer les images
-#     # for idx, image in enumerate(images):
-#     #     filename = f"{affaire.id}_{image.filename}"
-#     #     file_path = os.path.join(image_folder, filename)
-
-#     #     with open(file_path, "wb") as buffer:
-#     #         shutil.copyfileobj(image.file, buffer)
-
-#     #     affaire_image = AffaireImage(
-#     #         image_path=file_path,
-#     #         image_type=image_types[idx],
-#     #         affaire_id=affaire.id
-#     #     )
-#     #     db.add(affaire_image)
-
-#     # db.commit()
-#     db.close()
-
-#     return {"message": "Affaire et images enregistrées avec succès", "id": affaire.id}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# from fastapi import FastAPI, Form  # File, UploadFile sont commentés car images désactivées
-# from fastapi.middleware.cors import CORSMiddleware
-# from sqlalchemy import create_engine, Column, Integer, String, Date, Float
-# from sqlalchemy.orm import sessionmaker, declarative_base
-# from datetime import date
-# from typing import Optional
-
-# app = FastAPI()
-
-# # ✅ CORS pour Angular
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://localhost:4200"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # ✅ Connexion PostgreSQL
-# DATABASE_URL = "postgresql://postgres:geoinfo@localhost:5432/db_cadastre_mec"
-# engine = create_engine(DATABASE_URL)
-# SessionLocal = sessionmaker(bind=engine)
-# Base = declarative_base()
-
-# # ✅ Modèle SQLAlchemy
-# class Affaire(Base):
-#     __tablename__ = "affaires"
-
-#     id = Column(Integer, primary_key=True, index=True)
-#     titreMec = Column("titre_mec", String)
-#     proprieteFr = Column("propriete_fr", String)
-#     proprieteAr = Column("propriete_ar", String)
-#     situationFr = Column("situation_fr", String)
-#     situationAr = Column("situation_ar", String)
-#     planDate = Column("plan_date", Date)
-#     mappeCadre = Column("mappe_cadre", String)
-#     mappeReperage = Column("mappe_reperage", String)
-#     titreOrigine = Column("titre_origine", String)
-#     surface = Column("surface", Float)
-#     natureTravail = Column("nature_travail", String)
-#     numeroSd = Column("numero_sd", Integer)
-#     dateMec = Column("date_mec", Date)
-#     serviceCadastre = Column("service_cadastre", String)
-#     consistance = Column("consistance", String)
-#     charges = Column("charges", String)
-#     empietement = Column("empietement", String)  # Si bool: Column(Boolean)
-#     surfaceEmpietement = Column("surface_empietement", Float, nullable=True)
-#     nometprenom = Column("nom_prenom", String)
-#     cin = Column("cin", String)
-#     qualite = Column("qualite", String)
-
-# # ✅ Créer les tables dans la base si elles n'existent pas
-# Base.metadata.create_all(bind=engine)
-
-# # ✅ Endpoint POST (sans gestion d’images pour l’instant)
-# @app.post("/affaires")
-# async def create_affaire_with_images(
-#     titreMec: str = Form(...),
-#     proprieteFr: str = Form(...),
-#     proprieteAr: str = Form(...),
-#     situationFr: str = Form(...),
-#     situationAr: str = Form(...),
-#     # planDate: date = Form(...),
-
-#     mappeCadre: str = Form(...),
-#     mappeReperage: str = Form(...),
-#     titreOrigine: str = Form(...),
-#     surface: float = Form(...),
-#     natureTravail: str = Form(...),
-
-#     numeroSd: int = Form(...),
-#     # dateMec: date = Form(...),
-#     serviceCadastre: str = Form(...),
-#     consistance: str = Form(...),
-#     charges: str = Form(...),
-
-#     empietement: bool = Form(...),
-#     surfaceEmpietement: Optional[float] = Form(None),
-    
-#     cin: str = Form(...),
-#     nometprenom: str = Form(...),
-#     qualite: str = Form(...)
-# ):
-#     db = SessionLocal()
-#     try:
-#         affaire = Affaire(
-#             titreMec=titreMec,
-#             proprieteFr=proprieteFr,
-#             proprieteAr=proprieteAr,
-#             situationFr=situationFr,
-#             situationAr=situationAr,
-#             # planDate=planDate,
-#             mappeCadre=mappeCadre,
-#             mappeReperage=mappeReperage,
-#             titreOrigine=titreOrigine,
-#             surface=surface,
-#             natureTravail=natureTravail,
-#             numeroSd=numeroSd,
-#             # dateMec=dateMec,
-#             serviceCadastre=serviceCadastre,
-#             consistance=consistance,
-#             charges=charges,
-#             empietement=empietement,
-#             surfaceEmpietement=surfaceEmpietement,
-#             nometprenom=nometprenom,
-#             cin=cin,
-#             qualite=qualite
-#         )
-
-#         db.add(affaire)
-#         db.commit()
-#         db.refresh(affaire)
-#     except Exception as e:
-#         db.rollback()
-#         raise HTTPException(status_code=400, detail=str(e))
-#     finally:
-#         db.close()
-   
-
-#     return {"message": "Affaire enregistrée avec succès", "id": affaire.id}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# from fastapi import FastAPI, Depends
-# from sqlalchemy.orm import Session
-# from database import SessionLocal, engine
-# from models import Base, Person
-# from schemas import PersonCreate
-# import psycopg2  # ✅ Manquait ici !
-
-# Base.metadata.create_all(bind=engine)
-# app = FastAPI()
-
-# # Dependency
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
-
-# @app.post("/person", status_code=201)
-# def create_person(person: PersonCreate, db: Session = Depends(get_db)):
-#     try:
-#         conn = psycopg2.connect(
-#             dbname="db_cadastre_mec",
-#             user="postgres",
-#             password="geoinfo",
-#             host="localhost",
-#             port="5432"
-#         )
-#         cur = conn.cursor()
-#         cur.execute(
-#             "INSERT INTO persons (nom, prenom, email) VALUES (%s, %s, %s)",
-#             (person.nom, person.prenom, person.email)
-#         )
-#         conn.commit()
-#         cur.close()
-#         conn.close()
-#         return {"message": "Personne ajoutée avec succès."}
-#     except Exception as e:
-#         print("Erreur DB :", e)
-#         return {"message": "Erreur lors de l'ajout."}
-
-
-
-
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Body, Request
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-from models import Base, Person, Affaire, Image
+from models import Base, Person, ImportedShapefile,Affaire, Image, DesignatedShape
 from schemas import PersonCreate, AffaireCreate, ImageCreate
 import logging
 from fastapi.middleware.cors import CORSMiddleware 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 import shapefile
 import zipfile
 import os, shutil
 import json
+from shapely.geometry import shape, mapping, Point, Polygon
+import geopandas as gpd
+import rarfile
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from routers import image
+from shapely.geometry import shape
+from geoalchemy2.shape import from_shape
+from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKTElement
+from fastapi.responses import JSONResponse
+import ezdxf
+from fastapi.responses import FileResponse
+from math import cos, sin, pi
 
+
+
+
+app = FastAPI()
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.include_router(image.router) 
 
 # Création de l'application FastAPI
-app = FastAPI()
+
 
 # Configuration CORS - Doit venir APRÈS la création de l'app
 app.add_middleware(
@@ -490,92 +59,8 @@ def get_db():
     finally:
         db.close()
 
-# @app.post("/person", status_code=201)
-# def create_person(person: PersonCreate, db: Session = Depends(get_db)):
-#     try:
-#         # Vérification si l'email existe déjà
-#         existing_person = db.query(Person).filter(Person.email == person.email).first()
-#         if existing_person:
-#             raise HTTPException(
-#                 status_code=400,
-#                 detail="Cet email est déjà utilisé"
-#             )
-
-#         db_person = Person(
-#             nom=person.nom,
-#             prenom=person.prenom,
-#             email=person.email
-#         )
-#         db.add(db_person)
-#         db.commit()
-#         db.refresh(db_person)
-#         return {
-#             "message": "Personne ajoutée avec succès.",
-#             "id": db_person.id,
-#             "nom": db_person.nom,
-#             "prenom": db_person.prenom
-#         }
-#     except HTTPException:
-#         raise  # On relève les HTTPException déjà gérées
-#     except Exception as e:
-#         db.rollback()
-#         logger.error(f"Erreur DB : {str(e)}", exc_info=True)
-#         raise HTTPException(
-#             status_code=500,
-#             detail="Erreur interne du serveur lors de la création"
-#         )
-
-# Point de terminaison pour vérifier que l'API fonctionne
-# @app.get("/health")
-# def health_check():
-#     return {"status": "OK"}
-
-# # Exécution de l'application
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Création de l'application FastAPI
-# app = FastAPI()
-
-# # Configuration CORS - Doit venir APRÈS la création de l'app
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # À restreindre en production
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # Configuration du logging
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
-
-# # Création des tables
-# Base.metadata.create_all(bind=engine)
-
-# # Dépendance pour la base de données
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
 
 @app.post("/affaire", status_code=201)
 def create_affaire(affaire: AffaireCreate, db: Session = Depends(get_db)):
@@ -664,21 +149,157 @@ def create_image(image: ImageCreate, db: Session = Depends(get_db)):
         )
 
 
+
+
+
+
+
+# temp_polygon_gdf = None
+
+# @app.post("/save-polygon/")
+# async def save_polygon(request: Request):
+#     global temp_polygon_gdf
+#     data = await request.json()
+#     print("📨 Données GeoJSON reçues :", data)
+
+#     try:
+#         gdf = gpd.GeoDataFrame.from_features([{
+#             "type": "Feature",
+#             "geometry": data["geometry"],
+#             "properties": data.get("properties", {})
+#         }], crs="EPSG:26191")
+
+#         temp_polygon_gdf = gdf  # Stockage dans variable globale en mémoire
+
+#         print("✅ Polygone converti en GeoDataFrame :")
+#         print(gdf)
+
+#         # Tu peux aussi sauvegarder sur disque si tu veux, par ex:
+#         gdf.to_file("polygon_output.shp")
+
+#         # Message de validation détaillé (extrait WKT résumé)
+#         poly_wkt = gdf.geometry.iloc[0].wkt
+#         poly_preview = poly_wkt[:60] + "..." if len(poly_wkt) > 60 else poly_wkt
+
+#         return {
+#             "message": "Polygone sauvegardé et importé avec succès.",
+#             "polygon_preview": poly_preview
+#         }
+
+#     except Exception as e:
+#         print("❌ Erreur de traitement :", e)
+#         return {"error": str(e)}
+
+
+@app.post("/save-polygon/")
+async def save_polygon(request: Request):
+    data = await request.json()
+    geometry = data.get("geometry")
+    affaire_id = data.get("affaire_id")
+
+    if not geometry:
+        return {"error": "Aucune géométrie fournie."}
+
+    try:
+        # 🔁 Convertir le GeoJSON en géométrie Shapely
+        shapely_geom = shape(geometry)
+
+        # 🎯 Créer un WKTElement compatible PostGIS avec le bon SRID
+        geom_wkt = WKTElement(shapely_geom.wkt, srid=26191)  # adapte le SRID si nécessaire
+
+        # 📦 Enregistrer dans la base
+        with SessionLocal() as db:
+            shape_entry = DesignatedShape(
+                affaire_id=affaire_id,
+                # affaire_id=1,  # à remplacer dynamiquement si besoin
+                source_file="dessin manuel",
+                geom=geom_wkt
+            )
+            db.add(shape_entry)
+            db.commit()
+            db.refresh(shape_entry)
+
+        return {
+            "message": "✅ Polygone sauvegardé dans la base de données.",
+            "id": shape_entry.id
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
+
+# images
+
+
+
+
+
+
+# Upload endpoint
+@app.post("/upload-image/")
+async def upload_image(
+    affaire_id: int = Form(...),
+    type: str = Form(...),
+    file: UploadFile = File(...)
+):
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_location = os.path.join(upload_dir, file.filename)
+
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Save to DB
+    db = SessionLocal()
+    image = Image(affaire_id=affaire_id, file_path=file_location, type=type)
+    db.add(image)
+    db.commit()
+    db.refresh(image)
+    db.close()
+
+    return {"message": "Image uploaded", "id": image.id}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @app.post("/upload-shapefile/")
 async def upload_shapefile(file: UploadFile = File(...)):
-    # Enregistrer temporairement le ZIP
+    global temp_polygon_gdf
+
+    # Vérification du polygone temporaire
+    if temp_polygon_gdf is None:
+        return {"error": "Aucun polygone n’a été reçu. Veuillez d'abord dessiner un polygone."}
+
+    try:
+        # ✅ Calcul du buffer de 300m autour du polygone (et pas du centroïde)
+        buffer_geom = temp_polygon_gdf.geometry.buffer(10).iloc[0]
+    except Exception as e:
+        return {"error": f"Erreur lors du calcul du buffer : {e}"}
+
+    # 🔹 Sauvegarde temporaire du fichier ZIP
     zip_path = f"temp/{file.filename}"
     os.makedirs('temp', exist_ok=True)
+
     with open(zip_path, "wb") as f:
         f.write(await file.read())
 
-    # Extraire le ZIP
+    # 🔹 Extraction du ZIP
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall("temp/extracted")
 
-      # ✅ Chercher le fichier .shp dans tous les sous-dossiers
+    # 🔹 Recherche du fichier .shp
     shp_file = None
-    for root, dirs, files in os.walk("temp/extracted"):
+    for root, _, files in os.walk("temp/extracted"):
         for f_name in files:
             if f_name.endswith('.shp'):
                 shp_file = os.path.join(root, f_name)
@@ -689,43 +310,233 @@ async def upload_shapefile(file: UploadFile = File(...)):
     if not shp_file:
         return {"error": "Fichier .shp non trouvé dans le ZIP."}
 
-    sf = shapefile.Reader(shp_file)
-    # Trouver le fichier SHP
-    # shp_file = [f for f in os.listdir("temp/extracted") if f.endswith('.shp')]
-    # if not shp_file:
-    #     return {"error": "Shapefile non trouvé dans le ZIP"}
+    try:
+        # ✅ Lecture avec geopandas
+        shapefile_gdf = gpd.read_file(shp_file)
 
-    # shp_path = f"temp/extracted/{shp_file[0]}"
+        # ✅ Assure-toi que la projection est correcte
+        if shapefile_gdf.crs != "EPSG:26191":
+            shapefile_gdf = shapefile_gdf.to_crs("EPSG:26191")
 
-    # # Lire le shapefile
-    # sf = shapefile.Reader(shp_path)
-    fields = [field[0] for field in sf.fields[1:]]  # ignorer le premier champ de suppression
+        # ✅ Filtrage spatial : entités intersectant le buffer
+        # filtered_gdf = shapefile_gdf[shapefile_gdf.intersects(buffer_geom)]
+        filtered_gdf = shapefile_gdf[
+            shapefile_gdf.intersects(buffer_geom) & 
+            ~shapefile_gdf.within(temp_polygon_gdf.geometry.iloc[0])
+        ]
 
-    features = []
-    for sr in sf.shapeRecords():
-        if sr.shape.shapeType == shapefile.NULL:
-            continue  # Ignorer les entités sans géométrie
+        print(f"✅ {len(filtered_gdf)} entités intersectent le buffer de 10 m.")
+
+        # ✅ Conversion en GeoJSON
+        geojson = json.loads(filtered_gdf.to_json())
+
+        return geojson
+
+    except Exception as e:
+        print(f"❌ Erreur de traitement du shapefile : {e}")
+        return {"error": str(e)}
+
+
+
+
+
+
+
+
+from fastapi import UploadFile, File
+import os, zipfile, json
+import geopandas as gpd
+import rarfile
+from pathlib import Path
+
+# @app.post("/upload-shapefilee/")
+# async def upload_shapefilee(file: UploadFile = File(...)):
+#     global temp_polygon_gdf
+
+#     # 🔍 Vérification du polygone temporaire
+#     if temp_polygon_gdf is None:
+#         return {"error": "Aucun polygone n’a été reçu. Veuillez d'abord dessiner un polygone."}
+
+#     try:
+#         # ✅ Calcul du buffer de 300m autour du polygone
+#         buffer_geom = temp_polygon_gdf.geometry.buffer(300).iloc[0]
+#     except Exception as e:
+#         return {"error": f"Erreur lors du calcul du buffer : {e}"}
+
+#     # 📁 Préparation des dossiers
+#     os.makedirs("temp", exist_ok=True)
+#     os.makedirs("temp/extracted", exist_ok=True)
+
+#     # 🔽 Détails du fichier
+#     filename = file.filename
+#     ext = Path(filename).suffix.lower()
+#     archive_path = os.path.join("temp", filename)
+
+#     # 📥 Sauvegarde temporaire
+#     with open(archive_path, "wb") as f:
+#         f.write(await file.read())
+
+#     try:
+#         # 📦 Extraction selon le type (ZIP ou RAR)
+#         if ext == ".zip":
+#             with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+#                 zip_ref.extractall("temp/extracted")
+#         elif ext == ".rar":
+#             with rarfile.RarFile(archive_path, 'r') as rar_ref:
+#                 rar_ref.extractall("temp/extracted")
+#         else:
+#             return {"error": "Format de fichier non pris en charge. Seuls .zip et .rar sont acceptés."}
+#     except Exception as e:
+#         return {"error": f"Erreur lors de l’extraction de l’archive : {e}"}
+
+#     # 🔍 Recherche du fichier .shp
+#     shp_file = None
+#     for root, _, files in os.walk("temp/extracted"):
+#         for f_name in files:
+#             if f_name.endswith(".shp"):
+#                 shp_file = os.path.join(root, f_name)
+#                 break
+#         if shp_file:
+#             break
+
+#     if not shp_file:
+#         return {"error": "Fichier .shp non trouvé dans l’archive."}
+
+#     try:
+#         # ✅ Lecture du shapefile
+#         shapefile_gdf = gpd.read_file(shp_file)
+
+#         # ✅ Projection correcte
+#         if shapefile_gdf.crs != "EPSG:26191":
+#             shapefile_gdf = shapefile_gdf.to_crs("EPSG:26191")
+
+#         # ✅ Filtrage spatial : intersecte buffer et hors polygone
+#         filtered_gdf = shapefile_gdf[
+#             shapefile_gdf.intersects(buffer_geom) &
+#             ~shapefile_gdf.within(temp_polygon_gdf.geometry.iloc[0])
+#         ]
+
+#         print(f"✅ {len(filtered_gdf)} entités intersectent le buffer de 300 m.")
+
+#         # ✅ Retour du GeoJSON
+#         geojson = json.loads(filtered_gdf.to_json())
+#         return geojson
+
+#     except Exception as e:
+#         print(f"❌ Erreur de traitement du shapefile : {e}")
+#         return {"error": str(e)}
+
+
+from shapely.geometry import MultiPolygon, Polygon
+
+def ensure_multipolygon(geom):
+    """
+    Assure que la géométrie est un MultiPolygon.
+    Si c’est un Polygon, le convertit.
+    Sinon, retourne None.
+    """
+    if isinstance(geom, Polygon):
+        return MultiPolygon([geom])
+    elif isinstance(geom, MultiPolygon):
+        return geom
+    else:
+        return None
+
+
+@app.post("/upload-shapefilee/")
+async def upload_shapefilee(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    # 📁 Création des dossiers temporaires
+    os.makedirs("temp", exist_ok=True)
+    os.makedirs("temp/extracted", exist_ok=True)
+
+    filename = file.filename
+    ext = Path(filename).suffix.lower()
+    archive_path = os.path.join("temp", filename)
+
+    # 📅 Sauvegarde temporaire
+    with open(archive_path, "wb") as f:
+        f.write(await file.read())
+
+    # 📆 Extraction de l'archive
+    try:
+        if ext == ".zip":
+            with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+                zip_ref.extractall("temp/extracted")
+        elif ext == ".rar":
+            with rarfile.RarFile(archive_path, 'r') as rar_ref:
+                rar_ref.extractall("temp/extracted")
+        else:
+            return {"error": "Format non supporté (ZIP ou RAR uniquement)."}
+    except Exception as e:
+        return {"error": f"Erreur d'extraction : {e}"}
+
+    # 🔍 Trouver le fichier .shp
+    shp_file = None
+    for root, _, files in os.walk("temp/extracted"):
+        for f_name in files:
+            if f_name.endswith(".shp"):
+                shp_file = os.path.join(root, f_name)
+                break
+        if shp_file:
+            break
+
+    if not shp_file:
+        return {"error": "Fichier .shp non trouvé."}
+
+    try:
+        shapefile_gdf = gpd.read_file(shp_file)
+
+        if shapefile_gdf.crs != "EPSG:26191":
+            shapefile_gdf = shapefile_gdf.to_crs("EPSG:26191")
+
+        # 🔍 Récupération du dernier shape enregistré pour affaire
+        latest_shape = db.query(DesignatedShape).order_by(DesignatedShape.id.desc()).first()
+        if not latest_shape:
+            return {"error": "Aucun polygone de base (DesignatedShape) n'a été trouvé."}
+
+        affaire_id = latest_shape.affaire_id
+        buffer_geom = shape(json.loads(db.scalar(latest_shape.geom.ST_AsGeoJSON()))).buffer(300)
+
+        # ✅ Filtrer par intersection avec buffer mais hors polygone
+        filtered_gdf = shapefile_gdf[
+            shapefile_gdf.intersects(buffer_geom) &
+            ~shapefile_gdf.within(shape(json.loads(db.scalar(latest_shape.geom.ST_AsGeoJSON()))))
+        ]
+
+        # 🚫 Si vide : retourner un message sans erreur
+        if filtered_gdf.empty:
+            return {"message": "Aucune entité à importer selon les critères spatiaux."}
+
+        # 📆 Enregistrement dans la table imported_shapefiles
+        for _, row in filtered_gdf.iterrows():
+            geom_mp = ensure_multipolygon(row.geometry)
+            if geom_mp is None:
+                continue
+
+            geom_wkt = WKTElement(geom_mp.wkt, srid=26191)
+            entry = ImportedShapefile(
+                affaire_id=affaire_id,
+                file_name=Path(shp_file).name,
+                geom=geom_wkt
+            )
+            db.add(entry)
+
+        db.commit()
+        geojson = json.loads(filtered_gdf.to_json())
+        return JSONResponse(content=geojson)
+
+    except Exception as e:
+        return {"error": f"Erreur lors du traitement : {e}"}
+    finally:
+        # ✅ Nettoyage du dossier "temp/extracted" après traitement
         try:
-            geom = sr.shape.__geo_interface__
-            props = dict(zip(fields, sr.record))
-            features.append({
-                "type": "Feature",
-                "geometry": geom,
-                "properties": props
-            })
-        except Exception as e:
-            print(f"Erreur lors du traitement d'une entité : {e}")
-            continue
+            shutil.rmtree("temp/extracted")
+        except Exception as cleanup_err:
+            print(f"⚠️ Erreur lors du nettoyage : {cleanup_err}")
 
-    geojson = {
-        "type": "FeatureCollection",
-        "features": features
-    }
 
-    # Nettoyer les fichiers temporaires
-    os.remove(zip_path)
-    shutil.rmtree("temp/extracted", ignore_errors=True)
-    return geojson
+
+
 
 
 # Point de terminaison pour vérifier que l'API fonctionne
@@ -740,69 +551,146 @@ if __name__ == "__main__":
 
 
 
+# dxf to shp
 
 
 
-# @app.post("/upload-shapefile/")
-# async def upload_shapefile(file: UploadFile = File(...)):
-#     # Enregistrer temporairement le ZIP
-#     zip_path = f"temp/{file.filename}"
-#     os.makedirs('temp', exist_ok=True)
-#     with open(zip_path, "wb") as f:
+
+# @app.post("/convert-dxf-to-shp/")
+# async def convert_dxf_to_shp(file: UploadFile = File(...)):
+#     # 🔽 Sauvegarde temporaire du DXF
+#     dxf_path = os.path.join(OUTPUT_FOLDER, file.filename)
+#     with open(dxf_path, "wb") as f:
 #         f.write(await file.read())
 
-#     # Extraire le ZIP
-#     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-#         zip_ref.extractall("temp/extracted")
+#     # 📂 Dossier de sortie
+#     base_name = os.path.splitext(file.filename)[0]
+#     shp_folder = os.path.join(OUTPUT_FOLDER, base_name)
+#     os.makedirs(shp_folder, exist_ok=True)
 
-#       # ✅ Chercher le fichier .shp dans tous les sous-dossiers
-#     shp_file = None
-#     for root, dirs, files in os.walk("temp/extracted"):
-#         for f_name in files:
-#             if f_name.endswith('.shp'):
-#                 shp_file = os.path.join(root, f_name)
-#                 break
-#         if shp_file:
-#             break
+#     shp_path = os.path.join(shp_folder, base_name)
 
-#     if not shp_file:
-#         return {"error": "Fichier .shp non trouvé dans le ZIP."}
+#     # 📝 Crée shapefile
+#     writer = shapefile.Writer(shp_path)
+#     writer.field("LAYER", "C")
 
-#     sf = shapefile.Reader(shp_file)
-#     # Trouver le fichier SHP
-#     # shp_file = [f for f in os.listdir("temp/extracted") if f.endswith('.shp')]
-#     # if not shp_file:
-#     #     return {"error": "Shapefile non trouvé dans le ZIP"}
+#     # 📐 Lecture DXF
+#     doc = ezdxf.readfile(dxf_path)
+#     msp = doc.modelspace()
 
-#     # shp_path = f"temp/extracted/{shp_file[0]}"
+#     for e in msp:
+#         if e.dxftype() == "LINE":
+#             start = e.dxf.start
+#             end = e.dxf.end
+#             writer.line([[[start.x, start.y], [end.x, end.y]]])
+#             writer.record(e.dxf.layer)
+#         elif e.dxftype() == "CIRCLE":
+#             center = e.dxf.center
+#             radius = e.dxf.radius
+#             points = [
+#                 [center.x + radius * cos(a), center.y + radius * sin(a)]
+#                 for a in [i * 2 * pi / 36 for i in range(37)]
+#             ]
+#             writer.poly([points])
+#             writer.record(e.dxf.layer)
+#         elif e.dxftype() == "LWPOLYLINE":
+#             points = [[v[0], v[1]] for v in e.get_points()]
+#             if e.closed:
+#                 writer.poly([points])
+#             else:
+#                 writer.line([points])
+#             writer.record(e.dxf.layer)
+#         # ➕ Ajouter d’autres géométries si besoin
 
-#     # # Lire le shapefile
-#     # sf = shapefile.Reader(shp_path)
-#     fields = [field[0] for field in sf.fields[1:]]  # ignorer le premier champ de suppression
+#     writer.close()
 
-#     features = []
-#     for sr in sf.shapeRecords():
-#         if sr.shape.shapeType == shapefile.NULL:
-#             continue  # Ignorer les entités sans géométrie
-#         try:
-#             geom = sr.shape.__geo_interface__
-#             props = dict(zip(fields, sr.record))
-#             features.append({
-#                 "type": "Feature",
-#                 "geometry": geom,
-#                 "properties": props
-#             })
-#         except Exception as e:
-#             print(f"Erreur lors du traitement d'une entité : {e}")
-#             continue
+#     # 📦 Création ZIP
+#     zip_path = os.path.join(OUTPUT_FOLDER, f"{base_name}.zip")
+#     with zipfile.ZipFile(zip_path, "w") as zipf:
+#         for ext in ["shp", "shx", "dbf"]:
+#             file_path = f"{shp_path}.{ext}"
+#             zipf.write(
+#                 file_path,
+#                 arcname=os.path.basename(file_path)
+#             )
 
-#     geojson = {
-#         "type": "FeatureCollection",
-#         "features": features
-#     }
+#     return FileResponse(
+#         zip_path,
+#         filename=f"{base_name}.zip",
+#         media_type="application/zip"
+#     )
 
-#     # Nettoyer les fichiers temporaires
-#     os.remove(zip_path)
-#     shutil.rmtree("temp/extracted", ignore_errors=True)
-#     os.makedirs("temp/extracted", exist_ok=True)
-#     return geojson
+
+OUTPUT_FOLDER = "outputs"
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+@app.post("/convert-dxf-to-shp/")
+async def convert_dxf_to_shp(file: UploadFile = File(...)):
+    try:
+        # 🔽 Sauvegarde temporaire du DXF
+        dxf_path = os.path.join(OUTPUT_FOLDER, file.filename)
+        with open(dxf_path, "wb") as f:
+            f.write(await file.read())
+
+        # 📐 Lecture du DXF
+        doc = ezdxf.readfile(dxf_path)
+        msp = doc.modelspace()
+
+        geojson = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+
+        def add_feature(geom_type, coords, layer):
+            feature = {
+                "type": "Feature",
+                "properties": {"layer": layer},
+                "geometry": {
+                    "type": geom_type,
+                    "coordinates": coords
+                }
+            }
+            geojson["features"].append(feature)
+
+        for e in msp:
+            if e.dxftype() == "LINE":
+                start = e.dxf.start
+                end = e.dxf.end
+                coords = [[start.x, start.y], [end.x, end.y]]
+                add_feature("LineString", coords, e.dxf.layer)
+
+            elif e.dxftype() == "CIRCLE":
+                center = e.dxf.center
+                radius = e.dxf.radius
+                # approximer en polygone
+                points = [
+                    [
+                        center.x + radius * cos(a),
+                        center.y + radius * sin(a)
+                    ] for a in [i * 2 * pi / 36 for i in range(37)]
+                ]
+                add_feature("Polygon", [points], e.dxf.layer)
+
+            elif e.dxftype() == "LWPOLYLINE":
+                points = [[v[0], v[1]] for v in e.get_points()]
+                if e.closed:
+                    add_feature("Polygon", [points], e.dxf.layer)
+                else:
+                    add_feature("LineString", points, e.dxf.layer)
+
+            elif e.dxftype() == "POINT":
+                p = e.dxf.location
+                add_feature("Point", [p.x, p.y], e.dxf.layer)
+
+            # ➕ Ajouter d’autres types ici (ARC, ELLIPSE…)
+
+        # si tu veux nettoyer le fichier temporaire
+        # os.remove(dxf_path)
+
+        return JSONResponse(content=geojson)
+
+    except Exception as e:
+        return JSONResponse(
+            content={"error": str(e)},
+            status_code=500
+        )
