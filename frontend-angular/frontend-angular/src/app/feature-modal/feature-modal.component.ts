@@ -10,7 +10,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 })
 export class FeatureModalComponent {
   objectKeys = Object.keys;
-
+  
+  isArray(value: any): boolean {
+    return Array.isArray(value);
+  }
   constructor(@Inject(MAT_DIALOG_DATA) public data: { [key: string]: any }) {}
 
 }

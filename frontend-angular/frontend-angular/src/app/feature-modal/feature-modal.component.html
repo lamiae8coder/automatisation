@@ -4,12 +4,35 @@
     <thead>
       <tr><th>Champ</th><th>Valeur</th></tr>
     </thead>
-    <tbody>
+    <!-- <tbody>
       <tr *ngFor="let key of objectKeys(data)">
         <td>{{ key }}</td>
         <td>{{ data[key] }}</td>
       </tr>  
+    </tbody> -->
+
+
+    <tbody>
+      <tr *ngFor="let key of objectKeys(data)">
+        <td>{{ key }}</td>
+        <td>
+          <ng-container *ngIf="isArray(data[key]); else notArray">
+            <div *ngFor="let item of data[key]">
+              <span *ngIf="item.type && item.nb_consistance !== undefined">
+                {{ item.type }} : {{ item.nb_consistance }}
+              </span>
+              <span *ngIf="!item.type">
+                {{ item }}
+              </span>
+            </div>
+          </ng-container>
+          <ng-template #notArray>
+            {{ data[key] }}
+          </ng-template>
+        </td>
+      </tr>
     </tbody>
+
   </table>
 </mat-dialog-content>  
 <mat-dialog-actions align="end">

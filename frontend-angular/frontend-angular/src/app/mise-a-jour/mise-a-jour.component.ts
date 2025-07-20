@@ -1,4 +1,4 @@
-  import { Component, ViewChild, ElementRef } from '@angular/core';
+  import { Component,ChangeDetectorRef , ViewChild, ElementRef } from '@angular/core';
   import { HttpClient } from '@angular/common/http';
   import { FormBuilder, FormGroup, Validators } from '@angular/forms';
   import { MatSnackBar } from '@angular/material/snack-bar';
@@ -6,6 +6,7 @@
   import { Moment } from 'moment';
   import { MatDatepicker } from '@angular/material/datepicker';
 import { AffaireService } from '../services/affaire.service';
+import { AffaireProgressService } from '../services/affaire-progress.service'; // adapte le chemin selon ta structure
 
 
 
@@ -28,25 +29,15 @@ import { AffaireService } from '../services/affaire.service';
       'RDC + 2 ÉTAGES',
       'SOUS-SOL + RDC + 1 ÉTAGE'
     ];
-    // liste des qualités proposées pour l'autocomplete
     qualites: string[] = ['Propriétaire', 'Copropriétaire', 'Représentant'];
 
-    // images: { file: File | null, preview: string | null, type: string }[] = [
-    //   { file: null, preview: null, type: '' }
-    // ];
+    
     images: Array<{ file: File, preview: string, name: string, type?: string, selected?: boolean }> = [];
 
     naturesTravail: string[] = ['Mise à jour', 'Morcellement'];
 
 
-    // monthYearDisplay = '';
-    // dateType: string = 'complete';
-    // chosenMonthHandler(normalizedMonth: Moment, datepicker: MatDatepicker<Moment>) {
-    //   this.monthYearDisplay = normalizedMonth.format('MM/YYYY');
-    //   this.affaireForm.get('plandate')?.setValue(normalizedMonth.toDate());
-    //   datepicker.close();
-    // }
-
+  
     dateType: string = 'complete';
     monthYearDisplay: string = '';
     imageData = {
@@ -65,15 +56,17 @@ import { AffaireService } from '../services/affaire.service';
     types: string[] = [];
     affaireIdCreated: number | null = null;
     uploadedImagePaths: string[] = [];
-    // previews: { preview: string; name: string; type?: string }[] = [];
     previews: { preview: string; name: string; type?: string; selected: boolean }[] = [];
 
     selectedIndex: number | null = null;
 
+    affaireTitre: string = '';
+
+
     @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
 
-    constructor(private http: HttpClient,private affaireService: AffaireService, private fb: FormBuilder, private snackBar: MatSnackBar) {
+    constructor(public progressService: AffaireProgressService, private cdr: ChangeDetectorRef  ,private http: HttpClient,private affaireService: AffaireService, private fb: FormBuilder, private snackBar: MatSnackBar) {
       this.affaireForm = this.fb.group({
         titremec: ['', Validators.required],
         proprietefr: ['', Validators.required],
@@ -122,21 +115,27 @@ import { AffaireService } from '../services/affaire.service';
 
     } 
 
+    isLoading = true;
+    ngOnInit(): void {
+      const savedData = this.affaireService.getAffaireData();
+      const saved = this.affaireService.getState();
+      if (saved) {
+        this.previews = saved.previews;
+        this.dateType = saved.dateType;
+        // …
+      }
+      if (savedData) {
+        this.affaireForm.patchValue(savedData);
+      
+        this.affaireForm.markAllAsTouched();
+        this.cdr.detectChanges();
+        console.log('🔄 Données restaurées :', savedData);
+      }
+      this.isLoading = false;
+    }
     
-    // submitForm() {
-    //   const formData = new FormData();
-    //   formData.append('affaire_id', this.imageForm.get('affaire_id')?.value);
-    //   formData.append('type', this.imageForm.get('type')?.value);
-    //   if (this.selectedFile) {
-    //     formData.append('file', this.selectedFile);
-    //   }
 
-    //   this.http.post<any>('http://localhost:8000/addImageFD', formData)
-    //     .subscribe({
-    //       next: res => this.confirmationMessage = res.message,
-    //       error: err => this.confirmationMessage = 'Erreur lors de l\'upload'
-    //     });
-    // }
+
 
     onFileSelected(event: any) {
       const file = event.target.files[0];
@@ -149,19 +148,14 @@ import { AffaireService } from '../services/affaire.service';
       this.selectedIndex = index;
     }
 
-    // assignTypeToSelected(type: string) {
-    //   if (this.selectedIndex !== null) {
-    //     this.types[this.selectedIndex] = type;
-    //     this.previews[this.selectedIndex].type = type;
-    //   }
-    // }
+  
     
     assignTypeToSelected(type: string): void {
       this.previews.forEach((img, i) => {
         if (img.selected) {
           img.type = type;
           this.types[i] = type;
-          img.selected = false; // facultatif : on peut désélectionner après affectation
+          img.selected = false; 
         }
       });
     }
@@ -169,7 +163,6 @@ import { AffaireService } from '../services/affaire.service';
 
  
 
-        
     submitForm() {
       if (!this.affaireIdCreated) {
         alert("Veuillez d'abord enregistrer une affaire avant d'ajouter des images.");
@@ -178,33 +171,27 @@ import { AffaireService } from '../services/affaire.service';
       const formData = new FormData();
       formData.append('affaire_id', this.affaireIdCreated.toString());
 
-
-       // Vérification manuelle
-      // if (!this.types || this.types.length !== this.files.length || this.types.some(type => !type || type.trim() === '')) {
-      //   alert("Veuillez remplir un type pour chaque image.");
-      //   return;
-      // }
-
-
       this.files.forEach((file, i) => {
-        formData.append('files', file);       // tous les fichiers
-        formData.append('types', this.types[i]); // tous les types dans le même ordre
+        formData.append('files', file);
+        formData.append('types', this.types[i]);
       });
 
       this.http.post<any>('http://localhost:8000/addImageFD', formData)
         .subscribe({
           next: res => {
             this.confirmationMessage = res.message;
-            // alert(res.message);
             this.snackBar.open(res.message, 'Fermer', {
               duration: 4000,
-              panelClass: ['snackbar-success']  // Optionnel : pour styliser
+              panelClass: ['snackbar-success']
             });
 
             this.uploadedImagePaths = res.images.map((img: any) => 'http://localhost:8000' + img.file_path);
             this.files = [];
             this.types = [];
             this.imageForm.reset();
+            // this.affaireService.setAffaireData(formData);
+            // ICI on active l'étape 2, car upload réussi
+            this.progressService.markStep1Completed();
           },
           error: err => {
             this.confirmationMessage = 'Erreur lors de l\'upload.';
@@ -212,6 +199,9 @@ import { AffaireService } from '../services/affaire.service';
         });
     }
 
+
+
+        
 
     onFileChange(event: any) {
       const file = event.target.files[0];
@@ -287,6 +277,7 @@ import { AffaireService } from '../services/affaire.service';
             next: (response: any) => {
               this.affaireIdCreated = response.id; 
               this.affaireService.setAffaireId(response.id);
+              this.affaireService.setAffaireData(affaireData);
               this.snackBar.open(`Succès! ID: ${response.id}`, 'Fermer', {duration: 3000});
               // this.affaireForm.reset();
             },
@@ -321,9 +312,9 @@ import { AffaireService } from '../services/affaire.service';
       });
     }
 
+
     
 
-    // Clique sur une image pour sélectionner/désélectionner
     toggleSelectImage(index: number) {
       this.images[index].selected = !this.images[index].selected;
     }
@@ -333,17 +324,8 @@ import { AffaireService } from '../services/affaire.service';
     }
     
 
-    // Assigner un type aux images sélectionnées et déselectionner
     selectedType: string = '';
-    // assignTypeToSelected(type: string) {
-    //   this.selectedType = type;
-    //   this.images.forEach(img => {
-    //     if (img.selected) {
-    //       img.type = type;
-    //       img.selected = false;
-    //     }
-    //   });
-    // }
+
 
     onImageSubmit() {
       if (!this.imageData.affaire_id || !this.imageData.type || !this.imageData.file) {
@@ -374,7 +356,7 @@ import { AffaireService } from '../services/affaire.service';
     private formatDate(date: any): string {
       if (!date) return '';
       const d = new Date(date);
-      return d.toISOString().split('T')[0]; // Renvoie "YYYY-MM-DD"
+      return d.toISOString().split('T')[0]; 
     }
 
 
@@ -382,7 +364,6 @@ import { AffaireService } from '../services/affaire.service';
     onlyNumber(event: KeyboardEvent): void {
       const charCode = event.key;
 
-      // Empêche tout caractère qui n’est pas un chiffre
       if (!/^[0-9]$/.test(charCode)) {
         event.preventDefault();
       }
@@ -391,15 +372,12 @@ import { AffaireService } from '../services/affaire.service';
     submit(): boolean {
       return this.images.length >= 4 && this.images.length <= 6;
     }
-    // clearAllImages() {
-    //   this.previews = [];
-    // }
+ 
 
 
     clearAllImages() {
       this.previews = [];
       this.files = [];
-      // Réinitialiser l’input file pour permettre un nouveau upload
       if (this.fileInput) {
         this.fileInput.nativeElement.value = '';
       }

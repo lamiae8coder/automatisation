@@ -1,27 +1,12 @@
-<!-- <div class="top-bar horizontal-buttons">
-  <button  routerLink="/admin/add-affaire/mise-a-jour">Gestion des données</button> 
-  <button  routerLink="/admin/add-affaire/dessin-exterieur">Dessin extérieur</button>
-  <button >Dessin intérieur</button>
-
-
-</div>
-
-
-    <div >
-      <router-outlet></router-outlet>
-    </div> -->
-
-
-
-    <div class="top-step-bar">
+<!-- <div class="top-step-bar">
   <div class="step" routerLink="/admin/add-affaire/mise-a-jour" routerLinkActive="active-step">
     <div class="circle">1</div>
-    <div class="label">Gestion des données</div>
+    <div class="label">Gestion des données attributaire</div>
   </div>
 
   <div class="step" routerLink="/admin/add-affaire/dessin-exterieur" routerLinkActive="active-step">
     <div class="circle">2</div>
-    <div class="label">Dessin extérieur</div>
+    <div class="label">Gestion des données spatiale</div>
   </div>
 
    <div class="step" routerLink="/admin/add-affaire/importer-dessin" routerLinkActive="active-step">
@@ -33,7 +18,56 @@
     <div class="circle">4</div>
     <div class="label">Dessin intérieur</div>
   </div>
+</div> -->
+<div class="top-step-bar">
+  <div 
+    class="step"
+    routerLink="/admin/add-affaire/mise-a-jour"
+    routerLinkActive="active-step">
+    <div class="circle">1</div>
+    <div class="label">Gestion des données attributaire</div>
+  </div>
+
+  <div
+    class="step"
+    [class.disabled]="!progressService.isStep1Completed()"
+    [routerLink]="progressService.isStep1Completed() ? '/admin/add-affaire/dessin-exterieur' : null"
+    routerLinkActive="active-step">
+    <div class="circle">2</div>
+    <div class="label">Gestion des données spatiale</div>
+  </div>
+
+ 
+
+   <div  
+    class="step"
+    
+    routerLink="/admin/add-affaire/importer-dessin"
+    routerLinkActive="active-step">
+    <div class="circle">3</div> 
+    <div class="label">Importer le dessin</div>
+  </div>
+
+
+  <!-- <div  
+    class="step"
+    [class.disabled]="!progressService.isStep2Completed()"
+    [routerLink]="progressService.isStep2Completed() ? '/admin/add-affaire/importer-dessin' : null"
+    routerLinkActive="active-step">
+    <div class="circle">3</div>
+    <div class="label">Importer le dessin</div>
+  </div> -->
+
+  <div
+    class="step"
+    [class.disabled]="!progressService.isStep3Completed()"
+    [routerLink]="progressService.isStep3Completed() ? '/admin/add-affaire/dessin-interieur' : null"
+    routerLinkActive="active-step">
+    <div class="circle">4</div>
+    <div class="label">Dessin intérieur</div>
+  </div>
 </div>
+
 
 <!-- Contenu de la page affiché ici -->
 <div class="step-content">

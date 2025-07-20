@@ -49,6 +49,7 @@ import { FeatureModalComponent } from './feature-modal/feature-modal.component';
 import { ImporterDessinComponent } from './importer-dessin/importer-dessin.component';
 import { NatureDialogComponent } from './nature-dialog/nature-dialog.component';
 import { RouterModule } from '@angular/router';
+import { MapComponent } from './map/map.component';
 
 export const FRENCH_DATE_FORMATS = {
   parse: {
@@ -81,7 +82,8 @@ export const FRENCH_DATE_FORMATS = {
     AddAffaireComponent,
     FeatureModalComponent,
     ImporterDessinComponent,
-    NatureDialogComponent
+    NatureDialogComponent,
+    MapComponent
   ],
   imports: [
     BrowserModule,

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Body, Request
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-from models import Base, Person, ImportedShapefile,Affaire, Image, DesignatedShape
+from models import Base, Person, ImportedShapefile,Affaire,Image, DesignatedShape, PolygoneLayer,PointLayer,LigneLayer
 from schemas import PersonCreate, AffaireCreate, ImageCreate
 import logging
 from fastapi.middleware.cors import CORSMiddleware 
@@ -24,7 +24,10 @@ from fastapi.responses import JSONResponse
 import ezdxf
 from fastapi.responses import FileResponse
 from math import cos, sin, pi
-
+from shapely.geometry import LineString as ShapelyLineString
+from shapely.ops import split as shapely_split
+from shapely.geometry import GeometryCollection, Point as ShapelyPoint
+import traceback
 
 
 
@@ -349,82 +352,6 @@ import geopandas as gpd
 import rarfile
 from pathlib import Path
 
-# @app.post("/upload-shapefilee/")
-# async def upload_shapefilee(file: UploadFile = File(...)):
-#     global temp_polygon_gdf
-
-#     # 🔍 Vérification du polygone temporaire
-#     if temp_polygon_gdf is None:
-#         return {"error": "Aucun polygone n’a été reçu. Veuillez d'abord dessiner un polygone."}
-
-#     try:
-#         # ✅ Calcul du buffer de 300m autour du polygone
-#         buffer_geom = temp_polygon_gdf.geometry.buffer(300).iloc[0]
-#     except Exception as e:
-#         return {"error": f"Erreur lors du calcul du buffer : {e}"}
-
-#     # 📁 Préparation des dossiers
-#     os.makedirs("temp", exist_ok=True)
-#     os.makedirs("temp/extracted", exist_ok=True)
-
-#     # 🔽 Détails du fichier
-#     filename = file.filename
-#     ext = Path(filename).suffix.lower()
-#     archive_path = os.path.join("temp", filename)
-
-#     # 📥 Sauvegarde temporaire
-#     with open(archive_path, "wb") as f:
-#         f.write(await file.read())
-
-#     try:
-#         # 📦 Extraction selon le type (ZIP ou RAR)
-#         if ext == ".zip":
-#             with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-#                 zip_ref.extractall("temp/extracted")
-#         elif ext == ".rar":
-#             with rarfile.RarFile(archive_path, 'r') as rar_ref:
-#                 rar_ref.extractall("temp/extracted")
-#         else:
-#             return {"error": "Format de fichier non pris en charge. Seuls .zip et .rar sont acceptés."}
-#     except Exception as e:
-#         return {"error": f"Erreur lors de l’extraction de l’archive : {e}"}
-
-#     # 🔍 Recherche du fichier .shp
-#     shp_file = None
-#     for root, _, files in os.walk("temp/extracted"):
-#         for f_name in files:
-#             if f_name.endswith(".shp"):
-#                 shp_file = os.path.join(root, f_name)
-#                 break
-#         if shp_file:
-#             break
-
-#     if not shp_file:
-#         return {"error": "Fichier .shp non trouvé dans l’archive."}
-
-#     try:
-#         # ✅ Lecture du shapefile
-#         shapefile_gdf = gpd.read_file(shp_file)
-
-#         # ✅ Projection correcte
-#         if shapefile_gdf.crs != "EPSG:26191":
-#             shapefile_gdf = shapefile_gdf.to_crs("EPSG:26191")
-
-#         # ✅ Filtrage spatial : intersecte buffer et hors polygone
-#         filtered_gdf = shapefile_gdf[
-#             shapefile_gdf.intersects(buffer_geom) &
-#             ~shapefile_gdf.within(temp_polygon_gdf.geometry.iloc[0])
-#         ]
-
-#         print(f"✅ {len(filtered_gdf)} entités intersectent le buffer de 300 m.")
-
-#         # ✅ Retour du GeoJSON
-#         geojson = json.loads(filtered_gdf.to_json())
-#         return geojson
-
-#     except Exception as e:
-#         print(f"❌ Erreur de traitement du shapefile : {e}")
-#         return {"error": str(e)}
 
 
 from shapely.geometry import MultiPolygon, Polygon
@@ -443,9 +370,14 @@ def ensure_multipolygon(geom):
         return None
 
 
+
+
 @app.post("/upload-shapefilee/")
-async def upload_shapefilee(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    # 📁 Création des dossiers temporaires
+async def upload_shapefilee(
+    file: UploadFile = File(...),
+    affaire_id: int = Form(...),   # <-- affaire_id reçu en champ Form
+    db: Session = Depends(get_db)
+):
     os.makedirs("temp", exist_ok=True)
     os.makedirs("temp/extracted", exist_ok=True)
 
@@ -453,11 +385,10 @@ async def upload_shapefilee(file: UploadFile = File(...), db: Session = Depends(
     ext = Path(filename).suffix.lower()
     archive_path = os.path.join("temp", filename)
 
-    # 📅 Sauvegarde temporaire
+    # Sauvegarde temporaire
     with open(archive_path, "wb") as f:
         f.write(await file.read())
 
-    # 📆 Extraction de l'archive
     try:
         if ext == ".zip":
             with zipfile.ZipFile(archive_path, 'r') as zip_ref:
@@ -467,10 +398,10 @@ async def upload_shapefilee(file: UploadFile = File(...), db: Session = Depends(
                 rar_ref.extractall("temp/extracted")
         else:
             return {"error": "Format non supporté (ZIP ou RAR uniquement)."}
+
     except Exception as e:
         return {"error": f"Erreur d'extraction : {e}"}
 
-    # 🔍 Trouver le fichier .shp
     shp_file = None
     for root, _, files in os.walk("temp/extracted"):
         for f_name in files:
@@ -489,25 +420,21 @@ async def upload_shapefilee(file: UploadFile = File(...), db: Session = Depends(
         if shapefile_gdf.crs != "EPSG:26191":
             shapefile_gdf = shapefile_gdf.to_crs("EPSG:26191")
 
-        # 🔍 Récupération du dernier shape enregistré pour affaire
-        latest_shape = db.query(DesignatedShape).order_by(DesignatedShape.id.desc()).first()
+        # Récupérer DesignatedShape par affaire_id reçu
+        latest_shape = db.query(DesignatedShape).filter(DesignatedShape.affaire_id == affaire_id).order_by(DesignatedShape.id.desc()).first()
         if not latest_shape:
-            return {"error": "Aucun polygone de base (DesignatedShape) n'a été trouvé."}
+            return JSONResponse(status_code=400, content={"error": "Aucun dessin trouvé pour cet affaire."})
 
-        affaire_id = latest_shape.affaire_id
         buffer_geom = shape(json.loads(db.scalar(latest_shape.geom.ST_AsGeoJSON()))).buffer(300)
 
-        # ✅ Filtrer par intersection avec buffer mais hors polygone
         filtered_gdf = shapefile_gdf[
-            shapefile_gdf.intersects(buffer_geom) &
+            shapefile_gdf.intersects(buffer_geom) & 
             ~shapefile_gdf.within(shape(json.loads(db.scalar(latest_shape.geom.ST_AsGeoJSON()))))
         ]
 
-        # 🚫 Si vide : retourner un message sans erreur
         if filtered_gdf.empty:
             return {"message": "Aucune entité à importer selon les critères spatiaux."}
 
-        # 📆 Enregistrement dans la table imported_shapefiles
         for _, row in filtered_gdf.iterrows():
             geom_mp = ensure_multipolygon(row.geometry)
             if geom_mp is None:
@@ -527,12 +454,196 @@ async def upload_shapefilee(file: UploadFile = File(...), db: Session = Depends(
 
     except Exception as e:
         return {"error": f"Erreur lors du traitement : {e}"}
+
     finally:
-        # ✅ Nettoyage du dossier "temp/extracted" après traitement
         try:
             shutil.rmtree("temp/extracted")
         except Exception as cleanup_err:
-            print(f"⚠️ Erreur lors du nettoyage : {cleanup_err}")
+            print(f"Erreur nettoyage : {cleanup_err}")
+
+
+# @app.post("/upload-shapefilee/")
+# async def upload_shapefilee(file: UploadFile = File(...), db: Session = Depends(get_db)):
+#     os.makedirs("temp", exist_ok=True)
+#     os.makedirs("temp/extracted", exist_ok=True)
+
+#     filename = file.filename
+#     ext = Path(filename).suffix.lower()
+#     archive_path = os.path.join("temp", filename)
+
+#     with open(archive_path, "wb") as f:
+#         f.write(await file.read())
+
+#     try:
+#         if ext == ".zip":
+#             with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+#                 zip_ref.extractall("temp/extracted")
+#         elif ext == ".rar":
+#             with rarfile.RarFile(archive_path, 'r') as rar_ref:
+#                 rar_ref.extractall("temp/extracted")
+#         else:
+#             raise HTTPException(status_code=400, detail="Format non supporté (ZIP ou RAR uniquement).")
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=f"Erreur d'extraction : {e}")
+
+#     shp_file = None
+#     for root, _, files in os.walk("temp/extracted"):
+#         for f_name in files:
+#             if f_name.endswith(".shp"):
+#                 shp_file = os.path.join(root, f_name)
+#                 break
+#         if shp_file:
+#             break
+
+#     if not shp_file:
+#         raise HTTPException(status_code=400, detail="Fichier .shp non trouvé.")
+
+#     try:
+#         shapefile_gdf = gpd.read_file(shp_file)
+
+#         if shapefile_gdf.crs != "EPSG:26191":
+#             shapefile_gdf = shapefile_gdf.to_crs("EPSG:26191")
+
+#         latest_shape = db.query(DesignatedShape).order_by(DesignatedShape.id.desc()).first()
+#         if not latest_shape:
+#             raise HTTPException(
+#                 status_code=400,
+#                 detail="Veuillez désigner un polygone avant d'importer le shapefile."
+#             )
+
+#         affaire_id = latest_shape.affaire_id
+#         buffer_geom = shape(json.loads(db.scalar(latest_shape.geom.ST_AsGeoJSON()))).buffer(300)
+
+#         filtered_gdf = shapefile_gdf[
+#             shapefile_gdf.intersects(buffer_geom) &
+#             ~shapefile_gdf.within(shape(json.loads(db.scalar(latest_shape.geom.ST_AsGeoJSON()))))
+#         ]
+
+#         if filtered_gdf.empty:
+#             return {"message": "Aucune entité à importer selon les critères spatiaux."}
+
+#         for _, row in filtered_gdf.iterrows():
+#             geom_mp = ensure_multipolygon(row.geometry)
+#             if geom_mp is None:
+#                 continue
+
+#             geom_wkt = WKTElement(geom_mp.wkt, srid=26191)
+#             entry = ImportedShapefile(
+#                 affaire_id=affaire_id,
+#                 file_name=Path(shp_file).name,
+#                 geom=geom_wkt
+#             )
+#             db.add(entry)
+
+#         db.commit()
+#         geojson = json.loads(filtered_gdf.to_json())
+#         return JSONResponse(content=geojson)
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Erreur lors du traitement : {e}")
+#     finally:
+#         try:
+#             shutil.rmtree("temp/extracted")
+#         except Exception as cleanup_err:
+#             print(f"⚠️ Erreur lors du nettoyage : {cleanup_err}")
+
+
+
+
+
+# @app.post("/upload-shapefilee/")
+# async def upload_shapefilee(file: UploadFile = File(...), db: Session = Depends(get_db)):
+#     # 📁 Création des dossiers temporaires
+#     os.makedirs("temp", exist_ok=True)
+#     os.makedirs("temp/extracted", exist_ok=True)
+
+#     filename = file.filename
+#     ext = Path(filename).suffix.lower()
+#     archive_path = os.path.join("temp", filename)
+
+#     # 📅 Sauvegarde temporaire
+#     with open(archive_path, "wb") as f:
+#         f.write(await file.read())
+
+#     # 📆 Extraction de l'archive
+#     try:
+#         if ext == ".zip":
+#             with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+#                 zip_ref.extractall("temp/extracted")
+#         elif ext == ".rar":
+#             with rarfile.RarFile(archive_path, 'r') as rar_ref:
+#                 rar_ref.extractall("temp/extracted")
+#         else:
+#             return {"error": "Format non supporté (ZIP ou RAR uniquement)."}
+#     except Exception as e:
+#         return {"error": f"Erreur d'extraction : {e}"}
+
+#     # 🔍 Trouver le fichier .shp
+#     shp_file = None
+#     for root, _, files in os.walk("temp/extracted"):
+#         for f_name in files:
+#             if f_name.endswith(".shp"):
+#                 shp_file = os.path.join(root, f_name)
+#                 break
+#         if shp_file:
+#             break
+
+#     if not shp_file:
+#         return {"error": "Fichier .shp non trouvé."}
+
+#     try:
+#         shapefile_gdf = gpd.read_file(shp_file)
+
+#         if shapefile_gdf.crs != "EPSG:26191":
+#             shapefile_gdf = shapefile_gdf.to_crs("EPSG:26191")
+
+#         # 🔍 Récupération du dernier shape enregistré pour affaire
+#         latest_shape = db.query(DesignatedShape).order_by(DesignatedShape.id.desc()).first()
+#         if not latest_shape:
+#             return {"error": "Aucun polygone de base (DesignatedShape) n'a été trouvé."}
+
+#         affaire_id = latest_shape.affaire_id
+#         buffer_geom = shape(json.loads(db.scalar(latest_shape.geom.ST_AsGeoJSON()))).buffer(300)
+
+#         # ✅ Filtrer par intersection avec buffer mais hors polygone
+#         filtered_gdf = shapefile_gdf[
+#             shapefile_gdf.intersects(buffer_geom) &
+#             ~shapefile_gdf.within(shape(json.loads(db.scalar(latest_shape.geom.ST_AsGeoJSON()))))
+#         ]
+
+#         # 🚫 Si vide : retourner un message sans erreur
+#         if filtered_gdf.empty:
+#             return {"message": "Aucune entité à importer selon les critères spatiaux."}
+
+#         # 📆 Enregistrement dans la table imported_shapefiles
+#         for _, row in filtered_gdf.iterrows():
+#             geom_mp = ensure_multipolygon(row.geometry)
+#             if geom_mp is None:
+#                 continue
+
+#             geom_wkt = WKTElement(geom_mp.wkt, srid=26191)
+#             entry = ImportedShapefile(
+#                 affaire_id=affaire_id,
+#                 file_name=Path(shp_file).name,
+#                 geom=geom_wkt
+#             )
+#             db.add(entry)
+
+#         db.commit()
+#         geojson = json.loads(filtered_gdf.to_json())
+#         return JSONResponse(content=geojson)
+
+#     except Exception as e:
+#         return {"error": f"Erreur lors du traitement : {e}"}
+#     finally:
+#         # ✅ Nettoyage du dossier "temp/extracted" après traitement
+#         try:
+#             shutil.rmtree("temp/extracted")
+#         except Exception as cleanup_err:
+#             print(f"⚠️ Erreur lors du nettoyage : {cleanup_err}")
+
+
+
 
 
 
@@ -551,88 +662,32 @@ if __name__ == "__main__":
 
 
 
-# dxf to shp
 
-
-
-
-# @app.post("/convert-dxf-to-shp/")
-# async def convert_dxf_to_shp(file: UploadFile = File(...)):
-#     # 🔽 Sauvegarde temporaire du DXF
-#     dxf_path = os.path.join(OUTPUT_FOLDER, file.filename)
-#     with open(dxf_path, "wb") as f:
-#         f.write(await file.read())
-
-#     # 📂 Dossier de sortie
-#     base_name = os.path.splitext(file.filename)[0]
-#     shp_folder = os.path.join(OUTPUT_FOLDER, base_name)
-#     os.makedirs(shp_folder, exist_ok=True)
-
-#     shp_path = os.path.join(shp_folder, base_name)
-
-#     # 📝 Crée shapefile
-#     writer = shapefile.Writer(shp_path)
-#     writer.field("LAYER", "C")
-
-#     # 📐 Lecture DXF
-#     doc = ezdxf.readfile(dxf_path)
-#     msp = doc.modelspace()
-
-#     for e in msp:
-#         if e.dxftype() == "LINE":
-#             start = e.dxf.start
-#             end = e.dxf.end
-#             writer.line([[[start.x, start.y], [end.x, end.y]]])
-#             writer.record(e.dxf.layer)
-#         elif e.dxftype() == "CIRCLE":
-#             center = e.dxf.center
-#             radius = e.dxf.radius
-#             points = [
-#                 [center.x + radius * cos(a), center.y + radius * sin(a)]
-#                 for a in [i * 2 * pi / 36 for i in range(37)]
-#             ]
-#             writer.poly([points])
-#             writer.record(e.dxf.layer)
-#         elif e.dxftype() == "LWPOLYLINE":
-#             points = [[v[0], v[1]] for v in e.get_points()]
-#             if e.closed:
-#                 writer.poly([points])
-#             else:
-#                 writer.line([points])
-#             writer.record(e.dxf.layer)
-#         # ➕ Ajouter d’autres géométries si besoin
-
-#     writer.close()
-
-#     # 📦 Création ZIP
-#     zip_path = os.path.join(OUTPUT_FOLDER, f"{base_name}.zip")
-#     with zipfile.ZipFile(zip_path, "w") as zipf:
-#         for ext in ["shp", "shx", "dbf"]:
-#             file_path = f"{shp_path}.{ext}"
-#             zipf.write(
-#                 file_path,
-#                 arcname=os.path.basename(file_path)
-#             )
-
-#     return FileResponse(
-#         zip_path,
-#         filename=f"{base_name}.zip",
-#         media_type="application/zip"
-#     )
 
 
 OUTPUT_FOLDER = "outputs"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
+from shapely.geometry import LineString, mapping
+from shapely.ops import split
+from shapely import wkt
+
+# Exemple de géométrie découpe (à remplacer par ta géométrie réelle)
+# Ici un simple rectangle servant de découpe
+from shapely.geometry import box
+cutting_geom = box(10, 10, 20, 20)  # xmin, ymin, xmax, ymax
+
+
+
+
+
 @app.post("/convert-dxf-to-shp/")
 async def convert_dxf_to_shp(file: UploadFile = File(...)):
     try:
-        # 🔽 Sauvegarde temporaire du DXF
         dxf_path = os.path.join(OUTPUT_FOLDER, file.filename)
         with open(dxf_path, "wb") as f:
             f.write(await file.read())
 
-        # 📐 Lecture du DXF
         doc = ezdxf.readfile(dxf_path)
         msp = doc.modelspace()
 
@@ -641,51 +696,78 @@ async def convert_dxf_to_shp(file: UploadFile = File(...)):
             "features": []
         }
 
-        def add_feature(geom_type, coords, layer):
+        def add_feature(geom_type, coords, layer, properties=None):
             feature = {
                 "type": "Feature",
-                "properties": {"layer": layer},
-                "geometry": {
-                    "type": geom_type,
-                    "coordinates": coords
-                }
+                "properties": {"layer": layer}
+            }
+            if properties:
+                feature["properties"].update(properties)
+            feature["geometry"] = {
+                "type": geom_type,
+                "coordinates": coords
             }
             geojson["features"].append(feature)
 
-        for e in msp:
-            if e.dxftype() == "LINE":
-                start = e.dxf.start
-                end = e.dxf.end
-                coords = [[start.x, start.y], [end.x, end.y]]
-                add_feature("LineString", coords, e.dxf.layer)
+        def split_line_into_segments(coords, layer):
+            for i in range(len(coords) - 1):
+                add_feature("LineString", [coords[i], coords[i+1]], layer)
 
-            elif e.dxftype() == "CIRCLE":
-                center = e.dxf.center
-                radius = e.dxf.radius
-                # approximer en polygone
+        for e in msp:
+            dxftype = e.dxftype()
+            layer = e.dxf.layer
+
+            # if layer in ["CART", "RATTACHEMENT"]:
+            #     continue
+
+            if dxftype == "LINE":
+                start, end = e.dxf.start, e.dxf.end
+                coords = [[start.x, start.y], [end.x, end.y]]
+                split_line_into_segments(coords, layer)
+
+            elif dxftype in ("LWPOLYLINE", "POLYLINE"):
+                points = [
+                    [p.x, p.y] if hasattr(p, 'x') else [p[0], p[1]]
+                    for p in (e.vertices if dxftype == "POLYLINE" else e.get_points())
+                ]
+                split_line_into_segments(points, layer)
+                if getattr(e, "closed", False) or getattr(e, "is_closed", False):
+                    add_feature("Polygon", [points], layer)
+
+            elif dxftype == "CIRCLE":
+                center, radius = e.dxf.center, e.dxf.radius
                 points = [
                     [
                         center.x + radius * cos(a),
                         center.y + radius * sin(a)
                     ] for a in [i * 2 * pi / 36 for i in range(37)]
                 ]
-                add_feature("Polygon", [points], e.dxf.layer)
+                add_feature("Polygon", [points], layer)
 
-            elif e.dxftype() == "LWPOLYLINE":
-                points = [[v[0], v[1]] for v in e.get_points()]
-                if e.closed:
-                    add_feature("Polygon", [points], e.dxf.layer)
-                else:
-                    add_feature("LineString", points, e.dxf.layer)
-
-            elif e.dxftype() == "POINT":
+            elif dxftype == "POINT":
                 p = e.dxf.location
-                add_feature("Point", [p.x, p.y], e.dxf.layer)
+                add_feature("Point", [p.x, p.y], layer)
 
-            # ➕ Ajouter d’autres types ici (ARC, ELLIPSE…)
+            elif dxftype == "TEXT":
+                loc = e.dxf.insert
+                props = {
+                    "label": e.dxf.text,
+                    "height": getattr(e.dxf, "height", 1.0),
+                    "rotation": getattr(e.dxf, "rotation", 0.0),
+                    "h_align": getattr(e.dxf, "halign", 0),
+                    "v_align": getattr(e.dxf, "valign", 0)
+                }
+                add_feature("Point", [loc.x, loc.y], "LABEL_TEXT", props)
 
-        # si tu veux nettoyer le fichier temporaire
-        # os.remove(dxf_path)
+            elif dxftype == "MTEXT":
+                loc = e.dxf.insert
+                props = {
+                    "label": e.text,
+                    "height": getattr(e.dxf, "char_height", 1.0),
+                    "rotation": getattr(e.dxf, "rotation", 0.0),
+                    "width": getattr(e.dxf, "width", None)
+                }
+                add_feature("Point", [loc.x, loc.y], "LABEL_MTEXT", props)
 
         return JSONResponse(content=geojson)
 
@@ -694,3 +776,83 @@ async def convert_dxf_to_shp(file: UploadFile = File(...)):
             content={"error": str(e)},
             status_code=500
         )
+
+
+
+
+
+
+@app.get("/affaires/{affaire_id}")
+def get_affaire(affaire_id: int, db: Session = Depends(get_db)):
+    affaire = db.query(Affaire).filter(Affaire.id == affaire_id).first()
+    if not affaire:
+        raise HTTPException(status_code=404, detail="Affaire non trouvée")
+    return affaire
+
+
+
+
+@app.post("/save/")
+def save_layer(payload: dict):
+    """
+    payload attendu :
+    {
+        "affaire_id": 1,
+        "geometry_type": "point" | "line" | "polygon",
+        "features": {
+            "type": "FeatureCollection",
+            "features": [...]
+        }
+    }
+    """
+    affaire_id = payload.get("affaire_id")
+    geometry_type = payload.get("geometry_type")
+    features = payload.get("features", {}).get("features", [])
+
+    if not affaire_id or not geometry_type or not features:
+        raise HTTPException(status_code=400, detail="Paramètres manquants")
+
+    # Choisir le modèle SQLAlchemy en fonction du type
+    if geometry_type == "point":
+        ModelClass = PointLayer
+    elif geometry_type == "line":
+        ModelClass = LigneLayer
+    elif geometry_type == "polygon":
+        ModelClass = PolygoneLayer
+    else:
+        raise HTTPException(status_code=400, detail="Type de géométrie invalide")
+
+    try:
+        with SessionLocal() as db:
+            # Vérifie que l’affaire existe
+            affaire = db.query(Affaire).filter(Affaire.id == affaire_id).first()
+            if not affaire:
+                raise HTTPException(status_code=404, detail="Affaire non trouvée")
+
+            # Insérer les features
+            for feature in features:
+                geom_json = feature.get("geometry")
+                if not geom_json:
+                    continue
+
+                # 🔁 Shapely → GeoAlchemy
+                shapely_geom = shape(geom_json)
+                geom_obj = from_shape(shapely_geom, srid=26191)
+
+                # Créer une instance du modèle choisi
+                layer_entry = ModelClass(
+                    affaire_id=affaire_id,
+                    geom=geom_obj
+                )
+
+                db.add(layer_entry)
+
+            db.commit()
+
+        return {"message": "✅ Couche enregistrée avec succès."}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erreur lors de l'enregistrement : {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erreur interne lors de l'enregistrement")

@@ -1,4 +1,366 @@
-import { Component, OnInit } from '@angular/core';
+// import { Component,ElementRef,ViewChild, AfterViewInit, OnInit } from '@angular/core';
+// import { FeatureModalComponent } from '../feature-modal/feature-modal.component'; // adapte le chemin
+
+// import Map from 'ol/Map';
+// import View from 'ol/View';
+// import TileLayer from 'ol/layer/Tile';
+// import OSM from 'ol/source/OSM';
+// import { fromLonLat, transform } from 'ol/proj';
+// import { toStringXY } from 'ol/coordinate';
+// import proj4 from 'proj4';
+// import { register } from 'ol/proj/proj4';
+// import { saveAs } from 'file-saver';
+// import * as shpwrite from 'shp-write';
+// import { HttpClient } from '@angular/common/http';
+// import GeoJSON from 'ol/format/GeoJSON';
+// import VectorSource from 'ol/source/Vector';
+// import VectorLayer from 'ol/layer/Vector';
+// import { Style } from 'ol/style';
+// import { Icon, Style as PointStyle , Fill, Stroke, RegularShape } from 'ol/style';
+// import Overlay from 'ol/Overlay';
+// import Feature from 'ol/Feature';
+// import Point from 'ol/geom/Point';
+// import { Circle as CircleStyle } from 'ol/style';
+// import Draw from 'ol/interaction/Draw';
+// import Snap from 'ol/interaction/Snap';
+// import Modify from 'ol/interaction/Modify';
+// import Polygon from 'ol/geom/Polygon';
+// import type { Coordinate } from 'ol/coordinate';
+// import * as olSphere from 'ol/sphere';
+// import { buffer as bufferOp } from '@turf/turf';  // ajoute turf dans ton projet (npm i @turf/turf)
+// import * as turf from '@turf/turf';
+// import XYZ from 'ol/source/XYZ';
+// import { Modal } from 'bootstrap';
+// import { MatDialog } from '@angular/material/dialog';
+// import { getDistance } from 'ol/sphere';
+// import { toLonLat } from 'ol/proj';
+// import Text from 'ol/style/Text';
+// import { AffaireService } from '../services/affaire.service';
+// import LineString from 'ol/geom/LineString';
+// import { Geometry } from 'ol/geom';
+// import { AffaireProgressService } from '../services/affaire-progress.service'; // adapte le chemin selon ta structure
+// import {MapStateService}  from '../services/map-state.service';
+// import {MapService}  from '../services/map.service';
+
+
+// @Component({ 
+//   selector: 'app-dessin-exterieur',
+//   standalone: false,
+//   templateUrl: './dessin-exterieur.component.html',
+//   styleUrl: './dessin-exterieur.component.css'
+// })
+// export class DessinExterieurComponent implements AfterViewInit {
+//   map!: Map;
+  
+//   cursorCoords: string = '';
+//   osmLayer!: TileLayer;
+//   shapefileLayers: { layer: VectorLayer, name: string, visible: boolean }[] = [];
+//   popupOverlay!: Overlay;
+//   txtLayer!: VectorLayer; // Couche des points et polygone txt
+//   drawInteraction!: Draw;
+//   snapInteraction!: Snap;
+//   modifyInteraction!: Modify;
+//   vectorSource = new VectorSource();
+//   isDrawing: boolean = false; // Variable pour suivre l'état
+
+//   isMeasuringDistance = false;
+//   measurePoints: Coordinate[] = [];
+//   distanceResult: number | null = null;
+
+//   // Ajouter une couche dédiée pour afficher les points sélectionnés (optionnel)
+//   measureSource = new VectorSource();
+//   measureLayer!: VectorLayer;
+//   markerFeature: Feature | null = null; 
+//   showModalOnClick = false;
+//   currentMode: 'edit' | 'delete' | 'classify' | null = null;
+//   affaireTitre: string = '';
+
+//   private tempLineFeature: Feature<LineString> | null = null;
+  
+//   constructor(public progressService: AffaireProgressService,private mapService: MapService,private mapStateService: MapStateService ,private http: HttpClient,private affaireService: AffaireService, private dialog: MatDialog) {}
+
+//     @ViewChild('mapContainer') mapContainer!: ElementRef;
+//     @ViewChild('popup', { static: false }) popupRef!: ElementRef;
+
+
+
+
+
+
+//   private initMap(): void {
+//     const mapElement = this.mapContainer?.nativeElement;
+//     if (!mapElement) {
+//       console.error('Map container not found');
+//       return;
+//     }
+
+//     this.osmLayer = new TileLayer({
+//       source: new XYZ({
+//         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+//         attributions: ''
+//       }),
+//       visible: true
+//     });
+
+//     this.vectorSource = new VectorSource();
+
+//     this.map = new Map({
+//       target: mapElement,
+//       layers: [this.osmLayer],
+//       view: new View({
+//         projection: 'EPSG:3857',
+//         center: fromLonLat([-5.4, 32.0]),
+//         zoom: 6
+//       })
+//     });
+
+//     const markerLayer = new VectorLayer({ source: this.vectorSource });
+//     this.map.addLayer(markerLayer);
+
+//     this.popupOverlay = new Overlay({
+//       element: document.getElementById('popup') as HTMLElement,
+//       autoPan: { animation: { duration: 250 } }
+//     });
+//     this.map.addOverlay(this.popupOverlay);
+
+//     this.measureLayer = new VectorLayer({
+//       source: this.measureSource,
+//       zIndex: 1002,
+//       style: new Style({
+//         image: new CircleStyle({
+//           radius: 5,
+//           fill: new Fill({ color: 'yellow' }),
+//           stroke: new Stroke({ color: 'white', width: 2 })
+//         }),
+//         stroke: new Stroke({
+//           color: 'orange',
+//           width: 2,
+//           lineDash: [10, 10]
+//         })
+//       })
+//     });
+//     this.map.addLayer(this.measureLayer);
+
+//     this.map.on('pointermove', (event) => {
+//       const coords = event.coordinate;
+//       const transformedCoords = transform(coords, 'EPSG:3857', 'EPSG:26191');
+//       this.cursorCoords = toStringXY(transformedCoords, 2) + ' (Lambert Merchich)';
+//     });
+
+//     this.map.on('singleclick', (evt) => {
+//       if (this.isMeasuringDistance) {
+//         this.addMeasurePoint(evt.coordinate);
+//         return;
+//       }
+
+//       if (!this.showModalOnClick) return;
+
+//       const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feat) => feat);
+//       if (feature) {
+//         const properties = { ...feature.getProperties() };
+//         delete properties['geometry'];
+
+//         const geom = feature.getGeometry();
+//         if (geom instanceof Point) {
+//           const coord = transform(geom.getCoordinates(), 'EPSG:3857', 'EPSG:26191');
+//           properties['X'] = coord[0].toFixed(2);
+//           properties['Y'] = coord[1].toFixed(2);
+//         } else if (geom instanceof LineString) {
+//           const coords = geom.getCoordinates().map(c =>
+//             transform(c, 'EPSG:3857', 'EPSG:26191')
+//           );
+//           properties['Coordonnées ligne'] = coords.map((c, i) =>
+//             `Point ${i + 1}: X=${c[0].toFixed(2)}, Y=${c[1].toFixed(2)}`
+//           ).join('\n');
+//         } else if (geom instanceof Polygon) {
+//           const rings = geom.getCoordinates();
+//           const coordText = rings.map((ring, i) => {
+//             const coords = ring.map(c =>
+//               transform(c, 'EPSG:3857', 'EPSG:26191')
+//             );
+//             return `Anneau ${i + 1}:\n` + coords.map((c, j) =>
+//               `  Point ${j + 1}: X=${c[0].toFixed(2)}, Y=${c[1].toFixed(2)}`
+//             ).join('\n');
+//           }).join('\n\n');
+
+//           properties['Coordonnées polygone'] = coordText;
+//         }
+
+//         this.dialog.open(FeatureModalComponent, {
+//           width: '600px',
+//           data: properties
+//         });
+//       }
+//     });
+
+//     this.map.on('pointermove', (evt) => {
+//       if (this.isMeasuringDistance && this.measurePoints.length === 1) {
+//         const line = new LineString([this.measurePoints[0], evt.coordinate]);
+//         if (!this.tempLineFeature) {
+//           this.tempLineFeature = new Feature(line);
+//           this.tempLineFeature.setStyle(new Style({
+//             stroke: new Stroke({
+//               color: 'blue',
+//               width: 2,
+//               lineDash: [10, 10]
+//             })
+//           }));
+//           this.measureSource.addFeature(this.tempLineFeature);
+//         } else {
+//           this.tempLineFeature.setGeometry(line);
+//         }
+//       }
+//     });
+
+//     window.addEventListener('keydown', (e: KeyboardEvent) => {
+//       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+//         this.removeLastDrawPoint();
+//       }
+//     });
+
+
+//     const affaireId = this.affaireService.getAffaireId();
+//     if (affaireId) {
+//       this.affaireService.getAffaireDetails(affaireId).subscribe({
+//         next: data => {
+//           this.affaireTitre = data.titremec;
+//         },
+//         error: err => {
+//           console.error('Erreur lors du chargement de l’affaire', err);
+//         }
+//       });
+//     }
+//   }
+ 
+
+//   ngAfterViewInit() {
+//     // initialise la map
+//     this.mapService.initMap(this.mapContainer.nativeElement, this.popupRef.nativeElement);
+
+//     this.map = this.mapService.getMap();
+//     this.mapService.clearLayers();
+
+//     // Fond XYZ (imagery)
+//     this.mapService.setBaseLayerXYZ(
+//       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+//     );
+
+//     // Marqueurs
+//     const markerLayer = new VectorLayer({ source: this.vectorSource });
+//     this.mapService.addLayer(markerLayer);
+
+//     // Mesure
+//     const measureLayer = new VectorLayer({
+//       source: this.measureSource,
+//       zIndex: 1002,
+//       style: new Style({
+//         image: new CircleStyle({
+//           radius: 5,
+//           fill: new Fill({ color: 'yellow' }),
+//           stroke: new Stroke({ color: 'white', width: 2 })
+//         }),
+//         stroke: new Stroke({
+//           color: 'orange',
+//           width: 2,
+//           lineDash: [10, 10]
+//         })
+//       })
+//     });
+//     this.mapService.addLayer(measureLayer);
+
+//     // Centrage
+//     this.map.getView().setCenter(fromLonLat([-5.4, 32.0]));
+//     this.map.getView().setZoom(6);
+
+//     this.popupOverlay = new Overlay({
+//       element: this.popupRef.nativeElement,
+//       autoPan: { animation: { duration: 250 } }
+//     });
+//     this.map.addOverlay(this.popupOverlay);
+
+//     this.initMapEvents();
+//   }
+
+//   initMapEvents() {
+//     this.map.on('pointermove', (event) => {
+//       const coords = transform(event.coordinate, 'EPSG:3857', 'EPSG:26191');
+//       console.log(`Cursor: X=${coords[0].toFixed(2)}, Y=${coords[1].toFixed(2)}`);
+//     });
+
+//     this.map.on('singleclick', (evt) => {
+//       if (this.isMeasuringDistance) {
+//         this.addMeasurePoint(evt.coordinate);
+//         return;
+//       }
+
+//       const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feat) => feat);
+//       if (feature) {
+//         const props = { ...feature.getProperties() };
+//         delete props['geometry'];
+
+//         const geom = feature.getGeometry();
+//         if (geom instanceof Point) {
+//           const coord = transform(geom.getCoordinates(), 'EPSG:3857', 'EPSG:26191');
+//           props['X'] = coord[0].toFixed(2);
+//           props['Y'] = coord[1].toFixed(2);
+//         } else if (geom instanceof LineString) {
+//           props['Coordonnées ligne'] = this.formatLine(geom);
+//         } else if (geom instanceof Polygon) {
+//           props['Coordonnées polygone'] = this.formatPolygon(geom);
+//         }
+
+//         this.dialog.open(FeatureModalComponent, {
+//           width: '600px',
+//           data: props
+//         });
+//       }
+//     });
+
+//     this.map.on('pointermove', (evt) => {
+//       if (this.isMeasuringDistance && this.measurePoints.length === 1) {
+//         const line = new LineString([this.measurePoints[0], evt.coordinate]);
+//         if (!this.tempLineFeature) {
+//           this.tempLineFeature = new Feature(line);
+//           this.tempLineFeature.setStyle(new Style({
+//             stroke: new Stroke({
+//               color: 'blue',
+//               width: 2,
+//               lineDash: [10, 10]
+//             })
+//           }));
+//           this.measureSource.addFeature(this.tempLineFeature);
+//         } else {
+//           this.tempLineFeature.setGeometry(line);
+//         }
+//       }
+//     });
+
+//     window.addEventListener('keydown', (e: KeyboardEvent) => {
+//       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+//         this.removeLastDrawPoint();
+//       }
+//     });
+//   }
+ 
+
+
+  
+
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { Component,ElementRef,ViewChild, AfterViewInit, OnInit } from '@angular/core';
 import { FeatureModalComponent } from '../feature-modal/feature-modal.component'; // adapte le chemin
 
 import Map from 'ol/Map';
@@ -36,6 +398,13 @@ import { getDistance } from 'ol/sphere';
 import { toLonLat } from 'ol/proj';
 import Text from 'ol/style/Text';
 import { AffaireService } from '../services/affaire.service';
+import LineString from 'ol/geom/LineString';
+import { Geometry } from 'ol/geom';
+import { AffaireProgressService } from '../services/affaire-progress.service'; // adapte le chemin selon ta structure
+import {MapStateService}  from '../services/map-state.service';
+import {MapService}  from '../services/map.service';
+
+
 
 @Component({ 
   selector: 'app-dessin-exterieur',
@@ -43,8 +412,11 @@ import { AffaireService } from '../services/affaire.service';
   templateUrl: './dessin-exterieur.component.html',
   styleUrl: './dessin-exterieur.component.css'
 })
-export class DessinExterieurComponent implements OnInit {
-  map!: Map;
+export class DessinExterieurComponent implements AfterViewInit {
+
+
+    map!: Map;
+  
   cursorCoords: string = '';
   osmLayer!: TileLayer;
   shapefileLayers: { layer: VectorLayer, name: string, visible: boolean }[] = [];
@@ -65,58 +437,35 @@ export class DessinExterieurComponent implements OnInit {
   measureLayer!: VectorLayer;
   markerFeature: Feature | null = null; 
   showModalOnClick = false;
+  currentMode: 'edit' | 'delete' | 'classify' | null = null;
+  affaireTitre: string = '';
 
-  constructor(private http: HttpClient,private affaireService: AffaireService, private dialog: MatDialog) {}
+  private tempLineFeature: Feature<LineString> | null = null;
+  
+  @ViewChild('mapContainer') mapContainer!: ElementRef;
 
-  ngOnInit(): void {
-    proj4.defs('EPSG:26191', '+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs');
-    register(proj4);
+  constructor(public progressService: AffaireProgressService,private mapService: MapService,private mapStateService: MapStateService ,private http: HttpClient,private affaireService: AffaireService, private dialog: MatDialog) {}
 
-    this.osmLayer = new TileLayer({
-      source: new XYZ({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        attributions: ''
-      }),
-      visible: true
-    });
-
-    this.map = new Map({
-      target: 'map',
-      layers: [this.osmLayer],
-      view: new View({
-        projection: 'EPSG:3857',
-        center: fromLonLat([-5.4, 32.0]),
-        zoom: 6
-      })
-    });
-
-    const markerLayer = new VectorLayer({
-      source: this.vectorSource,
-    });
-
+  ngAfterViewInit() {
+    this.mapService.initMap(this.mapContainer.nativeElement,'coords');
+    this.map = this.mapService.getMap();
+    this.vectorSource = new VectorSource();
+    const markerLayer = new VectorLayer({ source: this.vectorSource });
     this.map.addLayer(markerLayer);
 
-
-    this.map.on('pointermove', (event) => {
-      const coords = event.coordinate;
-      const transformedCoords = transform(coords, 'EPSG:3857', 'EPSG:26191');
-      this.cursorCoords = toStringXY(transformedCoords, 2) + ' (Lambert Merchich)';
-    });
-
-    const container = document.getElementById('popup') as HTMLElement;
     this.popupOverlay = new Overlay({
-      element: container,
+      element: document.getElementById('popup') as HTMLElement,
       autoPan: { animation: { duration: 250 } }
     });
     this.map.addOverlay(this.popupOverlay);
 
-  
     this.measureLayer = new VectorLayer({
       source: this.measureSource,
+      zIndex: 1002,
       style: new Style({
         image: new CircleStyle({
-          radius: 6,
-          fill: new Fill({ color: 'orange' }),
+          radius: 5,
+          fill: new Fill({ color: 'yellow' }),
           stroke: new Stroke({ color: 'white', width: 2 })
         }),
         stroke: new Stroke({
@@ -128,22 +477,50 @@ export class DessinExterieurComponent implements OnInit {
     });
     this.map.addLayer(this.measureLayer);
 
-     this.map.on('singleclick', (evt) => {
-      if (!this.isMeasuringDistance) return;
-
-      const coord = evt.coordinate;
-      this.addMeasurePoint(coord);
+    this.map.on('pointermove', (event) => {
+      const coords = event.coordinate;
+      const transformedCoords = transform(coords, 'EPSG:3857', 'EPSG:26191');
+      this.cursorCoords = toStringXY(transformedCoords, 2) + ' (Lambert Merchich)';
     });
 
-  
+    this.map.on('singleclick', (evt) => {
+      if (this.isMeasuringDistance) {
+        this.addMeasurePoint(evt.coordinate);
+        return;
+      }
 
-    this.map.on('singleclick', (event) => {
-      if (!this.showModalOnClick) return; // Ne rien faire si désactivé
+      if (!this.showModalOnClick) return;
 
-      const feature = this.map.forEachFeatureAtPixel(event.pixel, (feat) => feat);
+      const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feat) => feat);
       if (feature) {
-        const properties = feature.getProperties();
-        delete properties['geometry']; // Supprimer la géométrie brute
+        const properties = { ...feature.getProperties() };
+        delete properties['geometry'];
+
+        const geom = feature.getGeometry();
+        if (geom instanceof Point) {
+          const coord = transform(geom.getCoordinates(), 'EPSG:3857', 'EPSG:26191');
+          properties['X'] = coord[0].toFixed(2);
+          properties['Y'] = coord[1].toFixed(2);
+        } else if (geom instanceof LineString) {
+          const coords = geom.getCoordinates().map(c =>
+            transform(c, 'EPSG:3857', 'EPSG:26191')
+          );
+          properties['Coordonnées ligne'] = coords.map((c, i) =>
+            `Point ${i + 1}: X=${c[0].toFixed(2)}, Y=${c[1].toFixed(2)}`
+          ).join('\n');
+        } else if (geom instanceof Polygon) {
+          const rings = geom.getCoordinates();
+          const coordText = rings.map((ring, i) => {
+            const coords = ring.map(c =>
+              transform(c, 'EPSG:3857', 'EPSG:26191')
+            );
+            return `Anneau ${i + 1}:\n` + coords.map((c, j) =>
+              `  Point ${j + 1}: X=${c[0].toFixed(2)}, Y=${c[1].toFixed(2)}`
+            ).join('\n');
+          }).join('\n\n');
+
+          properties['Coordonnées polygone'] = coordText;
+        }
 
         this.dialog.open(FeatureModalComponent, {
           width: '600px',
@@ -152,10 +529,52 @@ export class DessinExterieurComponent implements OnInit {
       }
     });
 
+    this.map.on('pointermove', (evt) => {
+      if (this.isMeasuringDistance && this.measurePoints.length === 1) {
+        const line = new LineString([this.measurePoints[0], evt.coordinate]);
+        if (!this.tempLineFeature) {
+          this.tempLineFeature = new Feature(line);
+          this.tempLineFeature.setStyle(new Style({
+            stroke: new Stroke({
+              color: 'blue',
+              width: 2,
+              lineDash: [10, 10]
+            })
+          }));
+          this.measureSource.addFeature(this.tempLineFeature);
+        } else {
+          this.tempLineFeature.setGeometry(line);
+        }
+      }
+    });
+
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        this.removeLastDrawPoint();
+      }
+    });
+
+
+    const affaireId = this.affaireService.getAffaireId();
+    if (affaireId) {
+      this.affaireService.getAffaireDetails(affaireId).subscribe({
+        next: data => {
+          this.affaireTitre = data.titremec;
+        },
+        error: err => {
+          console.error('Erreur lors du chargement de l’affaire', err);
+        }
+      });
+    }
   }
 
+  zoomIn() {
+    const view = this.mapService.getMap().getView();
+    view.setZoom(view.getZoom()! + 1);
+  }
+ 
 
-   toggleDistanceMeasure() {
+    toggleDistanceMeasure() {
     this.isMeasuringDistance = !this.isMeasuringDistance;
     if (!this.isMeasuringDistance) {
       this.resetMeasure();
@@ -164,6 +583,29 @@ export class DessinExterieurComponent implements OnInit {
     }
   }
 
+  removeLastDrawPoint() {
+    if (this.drawInteraction) {
+      this.drawInteraction.removeLastPoint();
+    }
+  }
+
+  // addMeasurePoint(coord: Coordinate) {
+  //   if (this.measurePoints.length >= 2) {
+  //     this.resetMeasure();
+  //   }
+
+  //   this.measurePoints.push(coord);
+
+  //   // Ajouter un point visuel sur la carte
+  //   const pointFeature = new Feature(new Point(coord));
+  //   this.measureSource.addFeature(pointFeature);
+
+  //   if (this.measurePoints.length === 2) {
+  //     this.calculateDistance();
+  //   }
+  // }
+
+
   addMeasurePoint(coord: Coordinate) {
     if (this.measurePoints.length >= 2) {
       this.resetMeasure();
@@ -171,11 +613,14 @@ export class DessinExterieurComponent implements OnInit {
 
     this.measurePoints.push(coord);
 
-    // Ajouter un point visuel sur la carte
     const pointFeature = new Feature(new Point(coord));
     this.measureSource.addFeature(pointFeature);
 
+    // Si c'est le 2e point, finaliser la ligne
     if (this.measurePoints.length === 2) {
+      if (this.tempLineFeature) {
+        this.tempLineFeature = null; // On garde la ligne actuelle
+      }
       this.calculateDistance();
     }
   }
@@ -194,15 +639,26 @@ export class DessinExterieurComponent implements OnInit {
     const dist = getDistance(coord1, coord2); // en mètres
 
     this.distanceResult = Math.round(dist);
-    alert(`Distance entre les points : ${this.distanceResult} mètres`);
+    // alert(`Distance entre les points : ${this.distanceResult} mètres`);
+    setTimeout(() => {
+      alert(`Distance entre les points : ${this.distanceResult} mètres`);
+    }, 0);
+
   }
 
 
+  // resetMeasure() {
+  //   this.measurePoints = [];
+  //   this.distanceResult = null;
+  //   this.measureSource.clear();
+  // }
   resetMeasure() {
     this.measurePoints = [];
     this.distanceResult = null;
     this.measureSource.clear();
+    this.tempLineFeature = null;
   }
+
 
 
   importFile() {
@@ -230,6 +686,7 @@ export class DessinExterieurComponent implements OnInit {
     } else {
       alert('Format de fichier non pris en charge.');
     }
+    event.target.value = '';
   }
 
   uploadShapefile(file: File) {
@@ -247,21 +704,37 @@ export class DessinExterieurComponent implements OnInit {
       }
     });
   }
+
+
   uploadShapefilee(file: File) {
+    const affaireId = this.affaireService.getAffaireId();
+
+    if (!affaireId) {
+      alert("Aucun ID d'affaire disponible !");
+      return;  // bloque si pas d'ID
+    }
+
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('affaire_id', affaireId.toString());
 
     this.http.post('http://127.0.0.1:8000/upload-shapefilee/', formData).subscribe({
       next: (geojson: any) => {
         console.log('GeoJSON reçu :', geojson);
         this.displayGeoJSON(geojson, file.name);
+        this.progressService.markStep2Completed();
       },
       error: (err) => {
-        alert('Erreur lors de l\'import du shapefile.');
+        if (err.error && err.error.error) {
+          alert(err.error.error);
+        } else {
+          alert('Erreur lors de l\'import du shapefile.');
+        }
         console.error(err);
       }
     });
   }
+
 
   displayGeoJSON(geojson: any, fileName: string) {
     const vectorSource = new VectorSource({
@@ -270,17 +743,24 @@ export class DessinExterieurComponent implements OnInit {
         featureProjection: 'EPSG:3857'
       })
     });
+  
+
+    // this.vectorSource.addFeatures(vectorSource);
+
+    
+
 
     const newLayer = new VectorLayer({
       source: vectorSource,
+      zIndex: 10,
       visible: true,
       style: new Style({
         stroke: new Stroke({
-          color: this.getRandomColor(),
+          color: 'rgba(60, 47, 248, 0.91)',
           width: 1
         }),
         fill: new Fill({
-          color: 'rgba(255, 0, 0, 0.2)'
+          color: 'rgba(33, 18, 241, 0.2)'
         })
       })
     });
@@ -295,14 +775,63 @@ export class DessinExterieurComponent implements OnInit {
 
     const extent = vectorSource.getExtent();
     this.map.getView().fit(extent, { duration: 1000, padding: [20, 20, 20, 20] });
+
+    // // 🔻 ici, utilise bien `vectorSource` !
+    // this.mapStateService.setFeatures(this.vectorSource.getFeatures());
+    // this.mapStateService.saveToLocalStorage();
   }
+
+
+
+
+
+  // displayGeoJSON(geojson: any, fileName: string) {
+  //   const vectorSource = new VectorSource({
+  //     features: new GeoJSON().readFeatures(geojson, {
+  //       dataProjection: 'EPSG:26191',
+  //       featureProjection: 'EPSG:3857'
+  //     })
+  //   });
+
+  //   const newLayer = new VectorLayer({
+  //     source: vectorSource,
+  //     zIndex: 10,
+  //     visible: true,
+  //     style: new Style({
+  //       stroke: new Stroke({
+  //         color: 'rgba(60, 47, 248, 0.91)',
+  //         width: 1
+  //       }),
+  //       fill: new Fill({
+  //         color: 'rgba(33, 18, 241, 0.2)'
+  //       })
+  //     })
+  //   });
+
+  //   this.map.addLayer(newLayer);
+
+  //   this.shapefileLayers.push({
+  //     layer: newLayer,
+  //     name: fileName,
+  //     visible: true
+  //   });
+    
+  //   const extent = vectorSource.getExtent();
+  //   this.map.getView().fit(extent, { duration: 1000, padding: [20, 20, 20, 20] });
+  //   // sauvegarder les features dans le MapStateService
+  //   this.mapStateService.setFeatures(this.vectorSource.getFeatures());
+  //   this.mapStateService.saveToLocalStorage();
+
+
+  // }
 
   toggleLayer(layer: string, visible: boolean) {
-    if (layer === 'osm' && this.osmLayer) {
-      this.osmLayer.setVisible(visible);
-    }
+    // if (layer === 'osm' && this.osmLayer) {
+    //   this.osmLayer.setVisible(visible);
+    // }
+    this.mapService.toggleLayer(layer, visible);
   }
-
+ 
   toggleSpecificLayer(index: number, visible: boolean) {
     if (this.shapefileLayers[index]) {
       this.shapefileLayers[index].layer.setVisible(visible);
@@ -348,20 +877,95 @@ export class DessinExterieurComponent implements OnInit {
 
   
 
+  // displayTxtPoints(content: string) {
+  //   const lines = content.split('\n');
+  //   const features: Feature[] = [];
+
+  //   for (let line of lines) {
+  //     const parts = line.trim().split(' ');
+  //     if (parts.length === 3) {
+  //       const label = parts[0]; // Exemple : B16
+  //       const x = parseFloat(parts[1]);
+  //       const y = parseFloat(parts[2]);
+
+  //       if (!isNaN(x) && !isNaN(y)) {
+  //         const coords = transform([x, y], 'EPSG:26191', 'EPSG:3857');
+
+  //         const pointFeature = new Feature({
+  //           geometry: new Point(coords),
+  //           name: label
+  //         });
+
+  //         pointFeature.setStyle(new Style({
+  //           image: new CircleStyle({
+  //             radius: 5,
+  //             fill: new Fill({ color: 'green' }),
+  //             stroke: new Stroke({ color: 'white', width: 1 })
+  //           }),
+  //           text: new Text({
+  //             text: label,
+  //             offsetY: -12,
+  //             font: '12px Calibri,sans-serif',
+  //             fill: new Fill({ color: '#000' }),
+  //             stroke: new Stroke({ color: '#fff', width: 2 })
+  //           })
+  //         }));
+
+
+  //         features.push(pointFeature);
+  //         this.vectorSource.addFeatures(features);
+  //         // this.mapStateService.setFeatures(this.vectorSource.getFeatures());
+  //         // this.mapStateService.saveToLocalStorage();
+  //       }
+  //     }
+  //   }
+
+  //   // Nettoyer la source si déjà utilisée
+  //   this.vectorSource.clear();
+
+  //   this.vectorSource.addFeatures(features);
+
+
+  //   // Créer la couche si elle n'existe pas encore
+  //   if (!this.txtLayer) {
+  //     this.txtLayer = new VectorLayer({
+  //       source: this.vectorSource,
+  //       zIndex: 1001,
+  //     });
+  //     this.map.addLayer(this.txtLayer);
+  //   }
+
+  //   // Ajuster la vue si au moins un point
+  //   if (features.length > 0) {
+  //     const extent = this.vectorSource.getExtent();
+  //     this.map.getView().fit(extent, { duration: 1000, padding: [20, 20, 20, 20] });
+  //   }
+
+  //   // Facultatif : autoriser la modification
+  //   this.addModifySnap();
+  // }
+
+
+
   displayTxtPoints(content: string) {
-    const lines = content.split('\n');
+    const map = this.mapService.getMap(); // récupère la carte depuis le service
+    if (!map) {
+      console.error('La carte n’est pas initialisée');
+      return;
+    }
+
+    const lines = content.trim().split('\n');
     const features: Feature[] = [];
 
     for (let line of lines) {
-      const parts = line.trim().split(' ');
+      const parts = line.trim().split(/\s+/);
       if (parts.length === 3) {
-        const label = parts[0]; // Exemple : B16
+        const label = parts[0];
         const x = parseFloat(parts[1]);
         const y = parseFloat(parts[2]);
 
         if (!isNaN(x) && !isNaN(y)) {
           const coords = transform([x, y], 'EPSG:26191', 'EPSG:3857');
-
           const pointFeature = new Feature({
             geometry: new Point(coords),
             name: label
@@ -370,7 +974,7 @@ export class DessinExterieurComponent implements OnInit {
           pointFeature.setStyle(new Style({
             image: new CircleStyle({
               radius: 5,
-              fill: new Fill({ color: 'red' }),
+              fill: new Fill({ color: 'green' }),
               stroke: new Stroke({ color: 'white', width: 1 })
             }),
             text: new Text({
@@ -382,35 +986,37 @@ export class DessinExterieurComponent implements OnInit {
             })
           }));
 
-
           features.push(pointFeature);
         }
       }
     }
 
-    // Nettoyer la source si déjà utilisée
-    this.vectorSource.clear();
+    if (!this.vectorSource) {
+      this.vectorSource = new VectorSource();
+    } else {
+      this.vectorSource.clear();
+    }
 
-    // Ajouter les points
     this.vectorSource.addFeatures(features);
 
-    // Créer la couche si elle n'existe pas encore
     if (!this.txtLayer) {
       this.txtLayer = new VectorLayer({
-        source: this.vectorSource
+        source: this.vectorSource,
+        zIndex: 1001,
       });
-      this.map.addLayer(this.txtLayer);
+      map.addLayer(this.txtLayer);
     }
 
-    // Ajuster la vue si au moins un point
     if (features.length > 0) {
       const extent = this.vectorSource.getExtent();
-      this.map.getView().fit(extent, { duration: 1000, padding: [20, 20, 20, 20] });
+      map.getView().fit(extent, { duration: 1000, padding: [20, 20, 20, 20] });
     }
 
-    // Facultatif : autoriser la modification
-    this.addModifySnap();
+    this.addModifySnap?.();
   }
+
+
+
 
   toggleModalOnClick() {
     this.showModalOnClick = !this.showModalOnClick;
@@ -431,66 +1037,138 @@ export class DessinExterieurComponent implements OnInit {
 
 
 
-  enableDrawing() {
-    // Supprimer les anciennes interactions
-    if (this.drawInteraction) this.map.removeInteraction(this.drawInteraction);
-    if (this.snapInteraction) this.map.removeInteraction(this.snapInteraction);
-    if (this.modifyInteraction) this.map.removeInteraction(this.modifyInteraction);
+  
 
-    // Initialiser les interactions
+  // enableDrawing() {
+  //   this.disableDrawing(); // Nettoyer avant
+
+  //   alert('✅ Mode dessin ACTIVÉ.\n👉 Cliquez droit pour dessiner.\n👉 Cliquez gauche pour terminer.');
+
+  //   this.isDrawing = true;
+
+  //   this.drawInteraction = new Draw({
+  //     source: this.vectorSource,
+  //     type: 'Polygon',
+  //     // On utilise finishCondition pour terminer au clic gauche
+  //     finishCondition: (event) => {
+  //       const pointerEvent = event.originalEvent as PointerEvent;
+  //       return pointerEvent.button === 0; // Clic gauche pour terminer
+  //     }
+  //   });
+
+  //   // Ajout de l’interaction snap
+  //   this.snapInteraction = new Snap({ source: this.vectorSource });
+  //   this.map.addInteraction(this.drawInteraction);
+  //   this.map.addInteraction(this.snapInteraction);
+
+  //   let sketch: Feature<Geometry> | null = null;
+
+  //   // Capture de la géométrie en cours
+  //   this.drawInteraction.on('drawstart', (evt) => {
+  //     sketch = evt.feature;
+  //   });
+
+  //   this.drawInteraction.on('drawend', (evt) => {
+  //     this.disableDrawing();
+  //     alert('✏️ Dessin terminé.');
+
+  //     const feature = evt.feature;
+  //     feature.setStyle(new Style({
+  //       stroke: new Stroke({ color: 'red', width: 2 }),
+  //       fill: new Fill({ color: 'rgba(238, 25, 25, 0.1)' })
+  //     }));
+
+  //     const geojsonFeature = new GeoJSON().writeFeatureObject(feature, {
+  //       featureProjection: 'EPSG:3857',
+  //       dataProjection: 'EPSG:26191'
+  //     });
+
+  //     const affaireId = this.affaireService.getAffaireId();
+  //     const payload = { geometry: geojsonFeature.geometry, affaire_id: affaireId };
+
+  //     this.http.post('http://127.0.0.1:8000/save-polygon/', payload).subscribe({
+  //       next: (response) => {
+  //         console.log('✅ Polygone sauvegardé côté backend.', response);
+  //       },
+  //       error: (err) => {
+  //         console.error('❌ Erreur d’envoi du polygone :', err);
+  //       }
+  //     });
+  //   });
+
+  //   // Ajouter un sommet au clic droit
+  //   this.map.getViewport().addEventListener('contextmenu', (e) => {
+  //     e.preventDefault(); // empêcher le menu
+  //     if (!this.isDrawing || !sketch) return;
+
+  //     const pixel = this.map.getEventPixel(e);
+  //     const coordinate = this.map.getCoordinateFromPixel(pixel);
+
+  //     const geom = sketch.getGeometry() as Polygon;
+  //     const coords = geom.getCoordinates()[0];
+
+  //     coords.splice(coords.length - 1, 0, coordinate); // ajouter le point avant le dernier (car le dernier est temporaire)
+  //     geom.setCoordinates([coords]);
+  //   });
+  // }
+
+ 
+
+
+
+  enableDrawing() {
+    this.disableDrawing(); // Nettoyer avant
+
+    alert('✅ Mode dessin ACTIVÉ.\n👉 Cliquez droit pour dessiner.\n👉 Cliquez gauche pour terminer.');
+
+    this.isDrawing = true;
+
     this.drawInteraction = new Draw({
       source: this.vectorSource,
       type: 'Polygon',
       finishCondition: (event) => {
         const pointerEvent = event.originalEvent as PointerEvent;
-        return pointerEvent.button === 2; // Clic droit pour terminer
+        return pointerEvent.button === 0; // Clic gauche pour terminer
       }
     });
 
     this.snapInteraction = new Snap({ source: this.vectorSource });
-    this.modifyInteraction = new Modify({ source: this.vectorSource });
-
     this.map.addInteraction(this.drawInteraction);
     this.map.addInteraction(this.snapInteraction);
-    this.map.addInteraction(this.modifyInteraction);
 
-    this.isDrawing = true;
+    let sketch: Feature<Geometry> | null = null;
 
-    alert(' Mode dessin activé.\n👉 Cliquez gauche pour tracer.\n👉 Cliquez droit pour terminer.');
+    this.drawInteraction.on('drawstart', (evt) => {
+      sketch = evt.feature;
+    });
 
-    // Quand le dessin est terminé
-    this.drawInteraction.on('drawend', (event) => {
+    this.drawInteraction.on('drawend', (evt) => {
       this.disableDrawing();
-      alert(' Dessin terminé.');
+      alert('✏️ Dessin terminé.');
 
-      const feature = event.feature;
+      const feature = evt.feature;
+
+      // Appliquer style
       feature.setStyle(new Style({
-        stroke: new Stroke({ color: 'yellow', width: 2 }),
-        fill: new Fill({ color: 'rgba(216, 216, 210, 0.1)' })
+        stroke: new Stroke({ color: 'red', width: 2 }),
+        fill: new Fill({ color: 'rgba(238, 25, 25, 0.1)' })
       }));
 
-      const geometry = feature.getGeometry();
-      if (!geometry) {
-        console.error(' Aucune géométrie trouvée.');
-        return;
-      }
+      // --- AJOUT ICI ---
+      this.addNewFeature(feature);  // Sauvegarde dans vectorSource + service
 
-      const extent = geometry.getExtent();
-      this.map.getView().fit(extent, { duration: 1000, padding: [20, 20, 20, 20] });
-
-      // 🔄 Convertir en GeoJSON (EPSG:26191)
+      // Ton code d’envoi au backend
       const geojsonFeature = new GeoJSON().writeFeatureObject(feature, {
         featureProjection: 'EPSG:3857',
         dataProjection: 'EPSG:26191'
       });
 
-      console.log('📦 GeoJSON du polygone :', geojsonFeature);
       const affaireId = this.affaireService.getAffaireId();
       const payload = { geometry: geojsonFeature.geometry, affaire_id: affaireId };
-      // 💾 Envoi à FastAPI
+
       this.http.post('http://127.0.0.1:8000/save-polygon/', payload).subscribe({
         next: (response) => {
-          console.log('✅ Polygone sauvegardé côté backend.',response);
+          console.log('✅ Polygone sauvegardé côté backend.', response);
         },
         error: (err) => {
           console.error('❌ Erreur d’envoi du polygone :', err);
@@ -498,8 +1176,24 @@ export class DessinExterieurComponent implements OnInit {
       });
     });
 
-    // ❌ Bloquer le menu contextuel
-    this.map.getViewport().addEventListener('contextmenu', (e) => e.preventDefault());
+    this.map.getViewport().addEventListener('contextmenu', (e) => {
+      e.preventDefault(); // empêcher le menu
+      if (!this.isDrawing || !sketch) return;
+
+      const pixel = this.map.getEventPixel(e);
+      const coordinate = this.map.getCoordinateFromPixel(pixel);
+
+      const geom = sketch.getGeometry() as Polygon;
+      const coords = geom.getCoordinates()[0];
+
+      coords.splice(coords.length - 1, 0, coordinate);
+      geom.setCoordinates([coords]);
+    });
+  }
+
+  // Ta méthode à ajouter dans la classe du composant
+  addNewFeature(feature: Feature) {
+    this.vectorSource.addFeature(feature);
   }
 
 
@@ -518,7 +1212,11 @@ export class DessinExterieurComponent implements OnInit {
     if (this.snapInteraction) this.map.removeInteraction(this.snapInteraction);
 
     this.modifyInteraction = new Modify({
-      source: this.vectorSource
+      source: this.vectorSource,
+      condition: (event) => {
+        // Empêcher modification sauf si on est dans le bon mode
+        return this.currentMode === 'edit';
+      }
     });
 
     this.snapInteraction = new Snap({
@@ -582,4 +1280,6 @@ export class DessinExterieurComponent implements OnInit {
     }
 
 
+
+  
 }

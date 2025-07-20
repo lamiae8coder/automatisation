@@ -1,6 +1,8 @@
 
 
-
+<div *ngIf="isLoading" class="loading-spinner">
+  Chargement des données…
+</div>
 <form [formGroup]="affaireForm" (ngSubmit)="onSubmit()" class="affaire-form">
 
   <mat-card class="section-card">
@@ -32,12 +34,7 @@
         <input matInput formControlName="situationar" required>
       </mat-form-field>
 
-      <!-- <mat-form-field appearance="outline">
-        <mat-label>Plan levé le (date du BI au plan initial)</mat-label>
-        <input matInput [matDatepicker]="picker1" formControlName="plandate" [value]="affaireForm.get('plandate')?.value | date:'dd MMMM yyyy':'':'fr'" required>
-        <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
-        <mat-datepicker #picker1></mat-datepicker>
-      </mat-form-field> -->
+    
     
       <!-- ✅ Choix du type de date -->
       <mat-radio-group [(ngModel)]="dateType" name="dateType">
@@ -102,10 +99,7 @@
         <input matInput type="number" formControlName="surface" required pattern="^[0-9]*$" (keypress)="onlyNumber($event)">
       </mat-form-field>
 
-      <!-- <mat-form-field appearance="outline">
-        <mat-label>Nature du Travail</mat-label>
-        <input matInput formControlName="natureTravail" required>
-      </mat-form-field> -->
+   
 
       <mat-form-field appearance="outline">
         <mat-label>Nature du Travail</mat-label>
@@ -141,12 +135,7 @@
         </mat-select>
       </mat-form-field>
 
-      <!-- <mat-form-field appearance="outline">
-        <mat-label>Consistance</mat-label>
-        <mat-select formControlName="consistance" required>
-          <mat-option *ngFor="let consistance of consistances" [value]="consistance">{{ consistance }}</mat-option>
-        </mat-select>
-      </mat-form-field> -->
+     
 
       <mat-form-field appearance="outline">
         <mat-label>Consistance</mat-label>
@@ -186,10 +175,7 @@
         <input matInput type="number" formControlName="surfaceempietement"  pattern="^[0-9]*$" (keypress)="onlyNumber($event)">
       </mat-form-field>
 
-      <!-- <mat-form-field appearance="outline">
-        <mat-label>Propriétaire</mat-label>
-        <input matInput formControlName="proprietaire" required>
-      </mat-form-field> -->
+     
 
     
       <mat-form-field appearance="outline">
@@ -229,53 +215,6 @@
 </form>
 
 
-
- 
-<!-- 
-<form [formGroup]="imageForm" (ngSubmit)="submitForm()" enctype="multipart/form-data">
-
-  <div>
-    <label>Sélectionner plusieurs images :</label>
-    <input type="file" (change)="onFilesSelected($event)" multiple accept="image/*" />
-  </div>
-
-  <div style="margin: 15px 0;">
-    <button mat-stroked-button color="primary" type="button" (click)="assignTypeToSelected('façade')">Façade</button>
-    <button mat-stroked-button color="accent" type="button" (click)="assignTypeToSelected('terrasse')">Terrasse</button>
-    <button mat-stroked-button color="warn" type="button" (click)="assignTypeToSelected('la_cour')">La cour</button>
-  </div>
-
-  <div class="images-grid" style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
-    <div *ngFor="let image of previews; let i = index"
-     class="image-item"
-     (click)="toggleImageSelection(i)"
-     [ngClass]="{'selected': image.selected}"
-     [style.border]="image.selected ? '2px solid #3f51b5' : '1px solid #ccc'"
-     style="padding: 10px; border-radius: 6px; cursor: pointer; max-width: 160px;">
-
-
-      <img [src]="image.preview" alt="Aperçu image"
-           style="width: 140px; height: auto; border-radius: 4px;" />
-
-      <p style="font-size: 13px; color: #555;">
-        Type :
-        <strong *ngIf="image.type; else notDefined">{{ image.type }}</strong>
-        <ng-template #notDefined><em>Non défini</em></ng-template>
-      </p>
-    </div>
-  </div>
-
-  <button mat-raised-button color="primary" type="submit" style="margin-top: 20px;">
-    Ajouter Images
-  </button>
-
-</form>
-
-<div *ngIf="confirmationMessage" style="margin-top: 10px; color: green;">
-  {{ confirmationMessage }}
-</div>
-
- -->
 
 
 
@@ -333,73 +272,6 @@
     {{ confirmationMessage }}
   </div>
 </div>
-
-
-
-
-
-
-
-
-<!-- upload images -->
-
-<!-- 
-
-<mat-card class="section-card">
-  <mat-card-title>TELECHARGER DES IMAGES</mat-card-title>
-
-  <br>
-
-  
-  <br>
-
-  <input type="file" (change)="onFilesSelected($event)" multiple accept="image/*" />
-
-  <br>
-  <div class="buttons-assign-type">
-    <button mat-raised-button color="primary" (click)="assignTypeToSelected('façade')">Façade</button>
-    <button mat-raised-button color="accent" (click)="assignTypeToSelected('terrasse')">Terrasse</button>
-    <button mat-raised-button color="warn" (click)="assignTypeToSelected('la_cour')">La cour</button>
-  </div>
-
-  <div class="images-grid">
-    <div *ngFor="let image of images; let i = index" class="image-item" [class.selected]="image.selected" (click)="toggleSelectImage(i)">
-      <img [src]="image.preview" alt="Aperçu image" class="image-preview-display" />
-      <p class="image-type-label">{{ image.type || 'Type non défini' }}</p>
-    </div>
-  </div>
- 
-  <div class="buttons-clear-all" style="margin-top: 10px;">
-    <button mat-stroked-button color="warn" (click)="clearAllImages()" [disabled]="images.length === 0">
-      <mat-icon>delete_forever</mat-icon> Effacer toutes les images
-    </button>
-  </div>
- 
-
-  <div class="submit-btn">
-    <button
-      mat-raised-button
-      type="submit"
-      color="primary"
-      [disabled]="images.length < 4 || images.length > 6"
-      (click)="submit()"
-      
-    >
-      <mat-icon>send</mat-icon> Soumettre
-    </button>
-  </div>
-
-  <p *ngIf="images.length < 4" style="color:rgb(207, 112, 112);">
-    Veuillez ajouter au moins 4 photos.
-  </p>
-
-  <p *ngIf="images.length > 6" style="color:rgb(207, 112, 112);">
-    Vous ne pouvez pas ajouter plus de 6 photos.
-  </p>
-</mat-card>
-
-
- -->
 
 
 

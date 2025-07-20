@@ -1,89 +1,93 @@
 
-
-
 <div class="main-container">
   <div class="sidebar">
-
-    <!-- 🔘 Boutons principaux -->
     <div class="top-buttons">
-      <button class="icon-btn" (click)="importTxtFile()">
-        <i class="fas fa-file-alt"></i> <span>Importer TXT</span>
-      </button>
-      <input type="file" id="txtFileInput" style="display: none;" (change)="handleTxtFileInput($event)" />
-
-      <button class="icon-btn" (click)="toggleDrawingMode()">
-        <i class="fas fa-pencil-alt"></i> <span>{{ isDrawing ? 'Désactiver dessin' : 'Activer dessin' }}</span>
-      </button>
-
-      <button class="icon-btn" (click)="importFilee()">
-        <i class="fas fa-upload"></i> <span>Importer shapefile 300m</span>
-      </button>
-      <input type="file" id="fileInputt" style="display: none;" (change)="handleFileInputt($event)" />
-
-      <button class="icon-btn info" (click)="toggleModalOnClick()">
-        <i class="fas fa-info-circle"></i> <span>Infos</span>
-      </button>
-    </div>
-
-    <hr />
-
-    <!-- 📍 Aller à une localisation -->
-    <div class="card coord-card">
-      <h3>📍 Aller à une localisation</h3>
-      <div class="xy-row">
-        <div class="xy-field">
-          <label for="inputX">X :</label>
-          <input id="inputX" type="number" [(ngModel)]="inputX" placeholder="Ex : 500000" />
+      <div class="styled-btnn">
+          📝 <strong>{{ affaireTitre || 'Affaire en cours' }}</strong>
         </div>
-        <div class="xy-field">
-          <label for="inputY">Y :</label>
-          <input id="inputY" type="number" [(ngModel)]="inputY" placeholder="Ex : 300000" />
-        </div>
+      <div class="tooltip-wrapper">
+         
+        <button class="styled-btn" (click)="importTxtFile()">
+          <i class="fas fa-file-alt"></i> <span>Importer les Bornes de l'affaire</span>
+        </button>
+        <span class="custom-tooltip">TXT (Borne X Y)</span>
+        <input type="file" id="txtFileInput" style="display: none;" (change)="handleTxtFileInput($event)" />
       </div>
-      <button class="action-btn" (click)="goToCoordinates()">Aller</button>
-    </div>
 
-    <!-- 📐 Mesurer une distance -->
-    <div class="card">
-      <h3>📐 Mesurer une distance</h3>
-      <button class="action-btn" (click)="toggleDistanceMeasure()">
-        {{ isMeasuringDistance ? 'Annuler mesure' : 'Mesurer' }}
-      </button>
-      <div *ngIf="distanceResult" class="result-box">
-        {{ distanceResult }} mètres
+      <div class="tooltip-wrapper">
+        <button class="styled-btn" (click)="toggleDrawingMode()">
+          <i class="fas fa-pencil-alt"></i> <span>Dessin de la limite de l'affaire</span>
+        </button>
+        <span class="custom-tooltip">{{ isDrawing ? 'Désactiver dessin' : 'Activer dessin' }}</span>
       </div>
-    </div>
 
-    <!-- 🗺️ Couches -->
-    <div class="card">
-      <h3>🗺️ Couches</h3>
-      <label>
-        <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />
-        OpenStreetMap
-      </label>
-      <div *ngFor="let shapefile of shapefileLayers; let i = index">
-        <label>
-          <input type="checkbox" [checked]="shapefile.visible" (change)="toggleSpecificLayer(i, getCheckedValue($event))" />
-          {{ shapefile.name }}
-        </label>
+      <div class="tooltip-wrapper">
+        <button class="styled-btn" (click)="importFilee()">
+          <i class="fas fa-upload"></i> <span>Import des Titre Riverains</span>
+        </button>
+        <span class="custom-tooltip">Shapefile (zip ou rar)</span>
+        <input type="file" id="fileInputt" style="display: none;" (change)="handleFileInputt($event)" />
       </div>
-    </div>
 
+      
+    </div>
   </div>
 
-  <!-- 🗺️ Carte -->
   <div class="map-area">
-    <div id="map"></div>
-    <div class="coords">{{ cursorCoords }}</div>
+   
+
+      <div #mapContainer class="map-container"></div>
+
+
+   
+    <!-- <div #popup id="popup" class="ol-popup"></div> -->
+   <!-- <div id="coords"
+      style="position:absolute;top:0;left:50%;transform:translateX(-50%);
+              background:white;padding:2px 4px;z-index:1000;">
+    Coordonnées : -
+  </div> -->
+    <div class="coords" >
+        {{ cursorCoords }}
+      </div> 
+    <div class="top-bar">
+      <div class="top-btn">
+        📍
+        <input type="number" [(ngModel)]="inputX" placeholder="X" />
+        <input type="number" [(ngModel)]="inputY" placeholder="Y" />
+        <button (click)="goToCoordinates()">Localiser</button>
+      </div>
+
+      <div class="top-btn">
+        📐
+        <button (click)="toggleDistanceMeasure()">
+          {{ isMeasuringDistance ? 'Annuler' : 'Mesurer distance' }}
+        </button>
+        <span *ngIf="distanceResult">{{ distanceResult }} m</span>
+      </div>
+
+      <div class="top-btn layers-container">
+        <label class="layer-checkbox">
+          <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />  Satellite
+        </label>
+        <ng-container *ngFor="let shapefile of shapefileLayers; let i = index">
+          <label class="layer-checkbox">
+            <input type="checkbox" [checked]="shapefile.visible" (change)="toggleSpecificLayer(i, getCheckedValue($event))" />
+            {{ shapefile.name }}
+          </label>
+        </ng-container>
+      </div>
+      <div class="top-btn">
+        <button class="styled-btn transparent-btn" (click)="toggleModalOnClick()">
+          <i class="fas fa-info-circle"></i> 
+        </button>
+      </div>
+    </div>
+    
+    
+
   </div>
 </div>
 
-<!-- 📌 Popup -->
-<div id="popup" class="ol-popup">
-  <div id="popup-content"></div>
-</div>
- 
-<!-- 🪪 Modal Info -->
 <div class="modal fade" id="featureInfoModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
@@ -92,7 +96,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
       <div class="modal-body">
-        <div id="modal-content">Chargement...</div> 
+        <div id="modal-content">Chargement...</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -100,4 +104,231 @@
     </div>
   </div>
 </div>
+<style>
+  
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.main-container {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  background: #f4f4f4;
+  padding: 10px;
+  flex: 0 0 200px;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.map-area {
+  flex: 1;
+  position: relative;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Barre du haut */
+.top-bar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  width: max-content;
+  gap: 10px;
+  z-index: 10;
+}
+
+.top-btn {
+  background: rgba(255, 255, 255, 0.7); /* fond semi-transparent */
+  border-radius: 20px;
+  padding: 5px 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(4px); /* effet moderne */
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+/* Inputs nombre agrandis */
+.top-btn input[type="number"] {
+  width: 110px; /* plus large pour nombres avec décimales */
+  font-size: 14px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.top-btn input[type="number"]:focus {
+  border-color: #1e88e5;
+}
+
+/* Boutons dans top-bar */
+.top-btn button {
+  background: #1e88e5;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.top-btn button:hover {
+  background: #1565c0;
+}
+
+/* Bouton Infos transparent */
+.transparent-btn {
+  background-color: rgba(30, 136, 229, 0.7);
+  box-shadow: none;
+}
+
+.transparent-btn:hover {
+  background-color: rgba(21, 101, 192, 0.9);
+}
+
+/* Styles couches */
+.layers-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.layer-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 15px;
+  padding: 2px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: background 0.2s ease;
+}
+
+.layer-checkbox:hover {
+  background: rgba(255,255,255,1);
+}
+
+.layer-checkbox input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Boutons principaux dans sidebar */
+.styled-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #1e88e5;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.styled-btnn{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #7f9fbb;
+  background: rgba(255,255,255,0.95);
+  /* color: #fff; */
+  border: none;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  margin-bottom: 8px;
+  width: 100%;
+  
+}
+
+.styled-btn:hover {
+  background-color: #1565c0;
+}
+
+/* Tooltips */
+.tooltip-wrapper {
+  position: relative;
+  display: block;
+}
+
+.custom-tooltip {
+  visibility: hidden;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip-wrapper:hover .custom-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+.top-btn input[type=number]::-webkit-outer-spin-button,
+.top-btn input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.top-btn input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
+.affaire-title {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(255,255,255,0.95);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+}
+
+
+
+</style> 
 

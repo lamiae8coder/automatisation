@@ -3,6 +3,7 @@ from decimal import Decimal
 from datetime import date
 from typing import Optional, List
 from fastapi import Form, UploadFile, File
+from typing import List, Dict, Any
 
 
 class PersonCreate(BaseModel):
@@ -52,3 +53,23 @@ class ShowImage(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+
+
+class GeoJSONGeometry(BaseModel):
+    type: str
+    coordinates: Any
+
+class GeoJSONFeature(BaseModel):
+    type: str  # doit être "Feature"
+    geometry: GeoJSONGeometry
+    properties: Dict[str, Any]
+
+
+
+class SaveLayerRequest(BaseModel):
+    affaire_id: int
+    layer_name: str
+    geometry_type: str  # 'point', 'line', ou 'polygon'
+    features: Dict[str, Any]  # le GeoJSON entier

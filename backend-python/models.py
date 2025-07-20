@@ -1,6 +1,10 @@
-from sqlalchemy import Column, Integer, Numeric, String, Date, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Numeric, String, Date,JSON, Float, Boolean, ForeignKey
 from database import Base
 from geoalchemy2 import Geometry
+from sqlalchemy.orm import relationship
+
+
+
 class Person(Base):
     __tablename__ = "persons"
     id = Column(Integer, primary_key=True, index=True)
@@ -63,3 +67,25 @@ class ImportedShapefile(Base):
     file_name = Column(String(500), nullable=True)
     geom = Column(Geometry(geometry_type='MULTIPOLYGON', srid=26191))
     
+
+
+class PointLayer(Base):
+    __tablename__ = "points_layer"
+    id = Column(Integer, primary_key=True, index=True)
+    affaire_id = Column(Integer, nullable=False, index=True)
+    geom = Column(Geometry(geometry_type='POINT', srid=26191))
+
+
+class LigneLayer(Base):
+    __tablename__ = "lignes_layer"
+    id = Column(Integer, primary_key=True, index=True)
+    affaire_id = Column(Integer, nullable=False, index=True)
+    geom = Column(Geometry(geometry_type='LINESTRING', srid=26191))
+
+
+class PolygoneLayer(Base):
+    __tablename__ = "polygones_layer"
+    id = Column(Integer, primary_key=True, index=True)
+    affaire_id = Column(Integer, nullable=False, index=True)
+    geom = Column(Geometry(geometry_type='POLYGON', srid=26191))
+

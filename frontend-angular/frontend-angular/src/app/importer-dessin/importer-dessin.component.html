@@ -1,290 +1,140 @@
-<!-- 
 
 
 <div class="main-container">
   <div class="sidebar">
-
     <div class="top-buttons">
-    <button class="icon-btn" (click)="importDXF()">
-    <i class="fas fa-drafting-compass"></i> <span>Importer DXF & Télécharger SHP</span>
-    </button>
-    <input type="file" id="dxfFileInput" style="display: none;" (change)="handleDXFFileInput($event)" />
-
-
-
-     
-
-      
-      <button class="icon-btn info" (click)="toggleModalOnClick()">
-        <i class="fas fa-info-circle"></i> <span>Infos</span>
-      </button>
-    </div>
-
-    <hr />
-
-
-
-
-    <div class="card">
-        <h3>🗺️ Couches</h3>
-
-        <label>
-            <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />
-            OpenStreetMap
-        </label>
-
-
-
-        <div *ngFor="let layer of layersList" class="layer-entry">
-            <label>
-              <input type="checkbox" [checked]="layer.visible" (change)="toggleLayerVisibility(layer)" />
-
-              <img 
-                *ngIf="layer.type === 'point'" 
-                src="/icons/point-icon.svg" 
-                class="layer-icon" 
-                alt="point" />
-
-              <img 
-                *ngIf="layer.type === 'line'" 
-                src="/icons/line-icon.svg" 
-                class="layer-icon" 
-                alt="line" />
-
-              <img 
-                *ngIf="layer.type === 'polygon'" 
-                src="/icons/polygon-icon.svg" 
-                class="layer-icon" 
-                alt="polygon" />
-
-              {{ layer.name }}
-            </label>
-            <button class="edit-btn" (click)="enableEditing(layer.layer)">
-              ✏️ Modifier
-            </button>
-            <button class="cancel-btn" (click)="disableEditing()">❌ Stop édition</button>
-
-
-          </div>
-
-
-    </div>
-
-
-
-    <div class="card">
-      <h3>📐 Mesurer une distance</h3>
-      <button class="action-btn" (click)="toggleDistanceMeasure()">
-        {{ isMeasuringDistance ? 'Annuler mesure' : 'Mesurer' }}
-      </button>
-      <div *ngIf="distanceResult" class="result-box">
-        {{ distanceResult }} mètres
-      </div>
-    </div>
-
-
-
-    <div class="card coord-card">
-      <h3>📍 Aller à une localisation</h3>
-      <div class="xy-row">
-        <div class="xy-field">
-          <label for="inputX">X :</label>
-          <input id="inputX" type="number" [(ngModel)]="inputX" placeholder="Ex : 500000" />
+      <div class="styled-btnn">
+          📝 <strong>{{ affaireTitre || 'Affaire en cours' }}</strong>
         </div>
-        <div class="xy-field">
-          <label for="inputY">Y :</label>
-          <input id="inputY" type="number" [(ngModel)]="inputY" placeholder="Ex : 300000" />
-        </div>
-      </div>
-      <button class="action-btn" (click)="goToCoordinates()">Aller</button>
-    </div>
-
-  </div>
-
-  <div class="map-area">
-    <div id="map"></div>
-    <div class="coords">{{ cursorCoords }}</div>
-  </div>
-</div>
-
-📌 Popup
-<div id="popup" class="ol-popup">
-  <div id="popup-content"></div>
-</div>
-
-<div class="modal fade" id="featureInfoModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalTitle">Informations de l'objet</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-      </div>
-      <div class="modal-body">
-        <div id="modal-content">Chargement...</div> 
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-      </div>
-    </div>
-  </div>
-</div>
- -->
-
-
- <div class="main-container">
-  <div class="sidebar">
-
-    <!-- 🔘 Boutons principaux -->
-    <div class="top-buttons">
-      <!-- Importer DXF -->
-      <button class="icon-btn" (click)="importDXF()">
-        <i class="fas fa-drafting-compass"></i>
-        <span>Importer DXF & Télécharger SHP</span>
-      </button>
-      <input type="file" id="dxfFileInput" style="display: none;" (change)="handleDXFFileInput($event)" />
-
-      <!-- Bouton Infos -->
-      <button class="icon-btn info" (click)="toggleModalOnClick()">
-        <i class="fas fa-info-circle"></i> <span>Infos</span>
-      </button>
-    </div>
-
-    <hr />
-
-    <!-- 🗺️ GESTION DES COUCHES -->
-    <div class="card">
-      <h3>🗺️ Couches</h3>
-
-      <!-- OpenStreetMap -->
-      <label>
-        <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />
-        OpenStreetMap
-      </label>
-
-      <!-- Couches dynamiques -->
-      <div *ngFor="let layer of layersList" class="layer-entry">
-        <label>
-          <input type="checkbox" [checked]="layer.visible" (change)="toggleLayerVisibility(layer)" />
-
-          <img *ngIf="layer.type === 'point'" src="/icons/point-icon.svg" class="layer-icon" alt="point" />
-          <img *ngIf="layer.type === 'line'" src="/icons/line-icon.svg" class="layer-icon" alt="line" />
-          <img *ngIf="layer.type === 'polygon'" src="/icons/polygon-icon.svg" class="layer-icon" alt="polygon" />
-
-          {{ layer.name }}
-        </label>
-
-       
-        <div class="layer-actions">
         
-          <button class="edit-btn"
-                  (click)="toggleEditing(layer.layer)">
-            ✏️ {{ editingLayer === layer.layer ? 'Stop' : 'Éditer' }}
+      <div class="tooltip-wrapper">
+        <button class="styled-btn" (click)="importDXF()">
+          <i class="fas fa-file-alt"></i> <span>Importer Dessin (Détails)</span>
+        </button>
+        <span class="custom-tooltip">Format DXF</span>
+        <input type="file" id="dxfFileInput" style="display: none;" (change)="handleDXFFileInput($event)" />
+      </div>
+      <div style="margin: 10px 0;">
+          <button class="icon-btn" (click)="startConnectingLines()" [disabled]="isDrawing">
+            <i class="fas fa-project-diagram"></i>
+            <span>Dessiner & relier lignes (polygone)</span>
           </button>
-
-
-          <button class="edit-btn"
-                  (click)="enableDeleteMode(layer.layer)"
-                  [disabled]="editingLayer !== layer.layer">
-            🗑️ Supprimer un objet
-          </button>
-
-
-          <button class="edit-btn"
-                (click)="enableMultiSelect(layer.layer)"
-                [disabled]="editingLayer !== layer.layer">
-            🖱️ Multi-sélection
-          </button>
-          <button class="edit-btn" 
-                (click)="enableClassification(layer.layer)"
-                [disabled]="editingLayer !== layer.layer">
-            🧬 Classifier
-          </button>
-
-
-       
-
-          <button (click)="enableSelection(layer.layer)"
-                  title="Sélectionner les entités de cette couche"
-                  [disabled]="editingLayer !== layer.layer">
-            🖱️
-          </button>
-
-          <button (click)="moveSelectedFeaturesTo(layer.layer)"
-                  title="Déplacer ici"
-                  [disabled]="editingLayer !== layer.layer">
-            ➡️
+          <button class="icon-btn warning" (click)="cancelDrawing()" *ngIf="isDrawing">
+            <i class="fas fa-times-circle"></i>
+            <span>Annuler dessin</span>
           </button>
 
           
-
-        </div>
-
       </div>
-    </div>
-    <div style="margin: 10px 0;">
-      <button class="icon-btn" (click)="startConnectingLines()" [disabled]="isDrawing">
-        <i class="fas fa-project-diagram"></i>
-        <span>Dessiner & relier lignes (polygone)</span>
-      </button>
-       <!-- Nouveau bouton pour arrêter -->
-      <button class="icon-btn warning" (click)="cancelDrawing()" *ngIf="isDrawing">
-        <i class="fas fa-times-circle"></i>
-        <span>Annuler dessin</span>
-      </button>
-    </div>
+     
+      <h1 class="styled-title">
+      <mat-icon>layers</mat-icon> Les couches
+      
+      </h1>
 
-    <!-- 🛠️ SÉLECTION MULTIPLE -->
-    <div class="card">
-      <h3>🛠️ Sélection multiple</h3>
-      <button class="action-btn" (click)="deleteSelectedFeatures()">🗑️ Supprimer sélection</button>
-      <button class="action-btn warning" (click)="disableSelection()">❌ Stop sélection</button>
-       <!-- 🎯 Bouton pour sélectionner des objets de cette couche -->
-    
-    </div>
 
-    <!-- 📐 MESURER UNE DISTANCE -->
-    <div class="card">
-      <h3>📐 Mesurer une distance</h3>
-      <button class="action-btn" (click)="toggleDistanceMeasure()">
-        {{ isMeasuringDistance ? 'Annuler mesure' : 'Mesurer' }}
-      </button>
-      <div *ngIf="distanceResult" class="result-box">
-        {{ distanceResult }} mètres
-      </div>
-    </div>
+        <div class="card">
+      
 
-    <!-- 📍 ALLER À UNE LOCALISATION -->
-    <div class="card coord-card">
-      <h3>📍 Aller à une localisation</h3>
-      <div class="xy-row">
-        <div class="xy-field">
-          <label for="inputX">X :</label>
-          <input id="inputX" type="number" [(ngModel)]="inputX" placeholder="Ex : 500000" />
+          <div *ngFor="let layer of layersList" class="layer-entry">
+            <label>
+              <input type="checkbox" [checked]="layer.visible" (change)="toggleLayerVisibility(layer)" />
+
+              <img *ngIf="layer.type === 'point'" src="/icons/point-icon.svg" class="layer-icon" alt="point" />
+              <img *ngIf="layer.type === 'line'" src="/icons/line-icon.svg" class="layer-icon" alt="line" />
+              <img *ngIf="layer.type === 'polygon'" src="/icons/polygon-icon.svg" class="layer-icon" alt="polygon" />
+
+              {{ layer.name }}
+            </label>
+
+          
+            <div class="layer-actions">
+            
+              <button class="edit-btn"
+                      (click)="toggleEditing(layer.layer)">
+                ✏️ {{ editingLayer === layer.layer ? 'Stop' : 'Éditer' }}
+              </button>
+
+
+              <button class="edit-btn"
+                      (click)="enableDeleteMode(layer.layer)"
+                      [disabled]="editingLayer !== layer.layer">
+                🗑️ Supprimer un objet
+              </button>
+
+
+
+              <button class="edit-btn" 
+                    (click)="enableClassification(layer.layer)"
+                    [disabled]="editingLayer !== layer.layer">
+                🧬 Classifier
+              </button>   
+
+               <button class="edit-btn" 
+                      (click)="saveLayer(layer)">
+                💾 Enregistrer
+              </button>
+
+            </div>
+
+          </div>
         </div>
-        <div class="xy-field">
-          <label for="inputY">Y :</label>
-          <input id="inputY" type="number" [(ngModel)]="inputY" placeholder="Ex : 300000" />
-        </div>
-      </div>
-      <button class="action-btn" (click)="goToCoordinates()">Aller</button>
     </div>
   </div>
 
-  <!-- 🗺️ ZONE DE CARTE -->
+
+
+  
   <div class="map-area">
-    <div id="map"></div>
-    <div class="coords">{{ cursorCoords }}</div>
+      <div #mapContainer class="map-container"></div>
+    
+        <!-- <div #popup id="popup" class="ol-popup"></div> -->
+
+    
+    <div class="coords" >
+        {{ cursorCoords }}
+      </div> 
+    <div class="top-bar">
+      <div class="top-btn">
+        📍
+        <input type="number" [(ngModel)]="inputX" placeholder="X" />
+        <input type="number" [(ngModel)]="inputY" placeholder="Y" />
+        <button (click)="goToCoordinates()">Localiser</button>
+      </div>
+
+      <div class="top-btn">
+        📐
+        <button (click)="toggleDistanceMeasure()">
+          {{ isMeasuringDistance ? 'Annuler' : 'Mesurer distance' }}
+        </button>
+        <span *ngIf="distanceResult">{{ distanceResult }} m</span>
+      </div>
+
+      <div class="top-btn">
+      
+      <button class="action-btn" (click)="deleteSelectedFeatures()">🗑️ Supprimer sélection</button>
+
+     
+    </div>
+
+      <div class="top-btn layers-container">
+        <label class="layer-checkbox">
+          <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />  Satellite
+        </label>
+        
+      </div>
+      <div class="top-btn">
+        <button class="styled-btn transparent-btn" (click)="toggleModalOnClick()">
+          <i class="fas fa-info-circle"></i> 
+        </button>
+      </div>
+    </div>
+    
+    
+
   </div>
 </div>
 
-<!-- 📌 Popup (désactivé par défaut) -->
-<!--
-<div id="popup" class="ol-popup">
-  <div id="popup-content"></div>
-</div>
--->
-
-<!-- 🪪 MODAL INFO -->
 <div class="modal fade" id="featureInfoModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
@@ -293,11 +143,236 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
       <div class="modal-body">
-        <div id="modal-content">Chargement...</div> 
-      </div>
+        <div id="modal-content">Chargement...</div>
+      </div> 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
       </div>
     </div>
   </div>
-</div>
+</div> 
+ <style>
+  
+
+
+.main-container {
+  display: flex;
+  height: 100vh;
+}
+.map-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.sidebar {
+  width: 220px;
+  background: #f4f4f4;
+  padding: 10px;
+  flex: 0 0 200px;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.map-area {
+  flex: 1;
+  position: relative;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+.top-bar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: max-content;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.top-btn {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  padding: 5px 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(4px); 
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.top-btn input[type="number"] {
+  width: 110px; 
+  font-size: 14px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.top-btn input[type="number"]:focus {
+  border-color: #1e88e5;
+}
+
+.top-btn button {
+  background: #1e88e5;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.top-btn button:hover {
+  background: #1565c0;
+}
+
+.transparent-btn {
+  background-color: rgba(30, 136, 229, 0.7);
+  box-shadow: none;
+}
+
+.transparent-btn:hover {
+  background-color: rgba(21, 101, 192, 0.9);
+}
+
+.layers-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.layer-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 15px;
+  padding: 2px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: background 0.2s ease;
+}
+
+.layer-checkbox:hover {
+  background: rgba(255,255,255,1);
+}
+
+.layer-checkbox input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.styled-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #1e88e5;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.styled-btnn{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #7f9fbb;
+  background: rgba(255,255,255,0.95);
+  border: none;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  margin-bottom: 8px;
+  width: 100%;
+  
+}
+
+.styled-btn:hover {
+  background-color: #1565c0;
+}
+
+.tooltip-wrapper {
+  position: relative;
+  display: block;
+}
+
+.custom-tooltip {
+  visibility: hidden;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip-wrapper:hover .custom-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+.top-btn input[type=number]::-webkit-outer-spin-button,
+.top-btn input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.top-btn input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.styled-title {
+  font-size: 19px;
+  font-weight: bold;
+  color: #1caa74; 
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 8px;
+}
+.styled-title mat-icon {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+
+
+</style>
+
+
+
+
+
