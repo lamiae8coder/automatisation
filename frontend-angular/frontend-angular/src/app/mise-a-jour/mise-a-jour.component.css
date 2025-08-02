@@ -164,3 +164,25 @@
   border-color: #3f51b5;
   box-shadow: 0 0 6px rgba(63, 81, 181, 0.6);
 }
+.service-list {
+  margin-top: 10px;
+}
+mat-chip {
+  margin: 4px;
+}
+.services-list {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.service-item {
+  background-color: #e0f7fa;
+  padding: 6px 10px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+}
+.service-item mat-icon {
+  font-size: 16px;
+}

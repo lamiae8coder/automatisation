@@ -58,14 +58,22 @@
     <div class="label">Importer le dessin</div>
   </div> -->
 
-  <div
+  <div 
     class="step"
-    [class.disabled]="!progressService.isStep3Completed()"
-    [routerLink]="progressService.isStep3Completed() ? '/admin/add-affaire/dessin-interieur' : null"
+  
+    routerLink="/admin/add-affaire/creation_piece_mec"
     routerLinkActive="active-step">
     <div class="circle">4</div>
-    <div class="label">Dessin intérieur</div>
+    <div class="label">Création des Pieces de Mec</div>
   </div>
+   <!-- <div 
+    class="step"
+  
+    routerLink="/admin/add-affaire/pieces_mec"
+    routerLinkActive="active-step">
+    <div class="circle">5</div>
+    <div class="label">Création des Pieces de Mec(methode 2)</div>
+  </div> -->
 </div>
 
 

@@ -85,6 +85,8 @@ export class NatureDialogComponent {
     }
   }
 
+  
+
   onNatureChange() {
     this.showCustomInput = this.selectedNature === 'Autre';
   }
@@ -110,3 +112,4 @@ export class NatureDialogComponent {
     this.dialogRef.close(null);
   }
 }
+ 

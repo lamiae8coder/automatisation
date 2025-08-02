@@ -7,6 +7,7 @@
   import { MatDatepicker } from '@angular/material/datepicker';
 import { AffaireService } from '../services/affaire.service';
 import { AffaireProgressService } from '../services/affaire-progress.service'; // adapte le chemin selon ta structure
+import { Observable, map, startWith } from 'rxjs';
 
 
 
@@ -21,13 +22,22 @@ import { AffaireProgressService } from '../services/affaire-progress.service'; /
   export class MiseAJourComponent {
 
     affaireForm: FormGroup;
+    
 
-    services: string[] = ['RABAT HASSAN AGDAL RYAD', 'KENITRA', 'SALE', 'SIDI KACEM', 'TEMARA', 'KHEMISSET', 'TIFLET', 'SIDI SLIMANE', 'TAMESNA', 'ROMMANI', 'TANGER', 'TANGER BNI MAKADA'];
+    // services: string[] = ['RABAT HASSAN AGDAL RYAD', 'KENITRA', 'SALE', 'SIDI KACEM', 'TEMARA', 'KHEMISSET', 'TIFLET', 'SIDI SLIMANE', 'TAMESNA', 'ROMMANI', 'TANGER', 'TANGER BNI MAKADA'];
+    private readonly defaultServices: string[] = [
+      'RABAT HASSAN AGDAL RYAD', 'KENITRA', 'SALE', 'SIDI KACEM',
+      'TEMARA', 'KHEMISSET', 'TIFLET', 'SIDI SLIMANE',
+      'TAMESNA', 'ROMMANI', 'TANGER', 'TANGER BNI MAKADA'
+    ];
+    services: string[] = [];
+    
+    filteredServices!: Observable<string[]>;
     consistances: string[] = [
-      'RDC',
-      'RDC + 1 ÉTAGE',
-      'RDC + 2 ÉTAGES',
-      'SOUS-SOL + RDC + 1 ÉTAGE'
+      '1/5000',
+      '1/2000',
+      '1/1000',
+      '1/500'
     ];
     qualites: string[] = ['Propriétaire', 'Copropriétaire', 'Représentant'];
 
@@ -80,14 +90,14 @@ import { AffaireProgressService } from '../services/affaire-progress.service'; /
         surface: ['', Validators.required],
         naturetravail: ['', Validators.required],
         numerosd: ['', Validators.required],
-        datemec: ['', Validators.required],
+        datemec: ['', Validators.required], 
         servicecadastre: ['', Validators.required],
         consistance: ['', Validators.required],
         charges: ['NEANT', Validators.required],
         empietement: ['', Validators.required],
         surfaceempietement: [0],
         qualite: ['', Validators.required],
-        cin: ['', Validators.required],
+        cin: [''],
         nometprenom: ['', Validators.required],
       });
 
@@ -132,8 +142,67 @@ import { AffaireProgressService } from '../services/affaire-progress.service'; /
         console.log('🔄 Données restaurées :', savedData);
       }
       this.isLoading = false;
+      // Liste de base
+      const defaultServices: string[] = [
+        'RABAT HASSAN AGDAL RYAD', 'KENITRA', 'SALE', 'SIDI KACEM',
+        'TEMARA', 'KHEMISSET', 'TIFLET', 'SIDI SLIMANE',
+        'TAMESNA', 'ROMMANI', 'TANGER', 'TANGER BNI MAKADA'
+      ];
+
+      // Charger depuis localStorage
+      const savedServices = localStorage.getItem('customServices');
+      const customServices: string[] = savedServices ? JSON.parse(savedServices) : [];
+      // this.services = savedServices ? JSON.parse(savedServices) : [];
+      this.services = [...defaultServices, ...customServices.filter(s => !defaultServices.includes(s))];
+      this.filteredServices = this.affaireForm.get('servicecadastre')!.valueChanges.pipe(
+        startWith(''),
+        map(value => this._filterServices(value || ''))
+      );
     }
     
+    private _filterServices(value: string): string[] {
+      const filterValue = value.toLowerCase();
+      return this.services.filter(service =>
+        service.toLowerCase().includes(filterValue)
+      );
+    }
+
+    // Fonction appelée au blur OU au moment de la sélection OU touche "Enter"
+   addServiceIfNotExists(fromOption: boolean = false): void {
+      const control = this.affaireForm.get('servicecadastre');
+      const value = control?.value?.trim();
+
+      if (!value) return;
+
+      if (!this.services.includes(value)) {
+        this.services.push(value);
+        this.saveCustomServices(); // ✅ Appelle la bonne méthode ici
+      }
+
+      if (!fromOption) {
+        control?.setValue(value);
+      }
+    }
+
+
+    removeCurrentService(): void {
+      const control = this.affaireForm.get('servicecadastre');
+      const value = control?.value?.trim();
+
+      if (!value) return;
+
+      const index = this.services.indexOf(value);
+      if (index >= 0) {
+        this.services.splice(index, 1);
+        this.saveCustomServices(); // ✅ Appelle la bonne méthode ici aussi
+        control?.setValue('');
+      }
+    }
+
+    private saveCustomServices(): void {
+      const customServices = this.services.filter(s => !this.defaultServices.includes(s));
+      localStorage.setItem('customServices', JSON.stringify(customServices));
+    }
 
 
 

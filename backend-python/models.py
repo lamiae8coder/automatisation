@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Numeric, String, Date,JSON, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Numeric,Text, String, Date,JSON, Float, Boolean, ForeignKey
 from database import Base
 from geoalchemy2 import Geometry
 from sqlalchemy.orm import relationship
@@ -46,7 +46,7 @@ class Image(Base):
     affaire_id = Column(Integer, nullable=False)
     file_path = Column(String(500), nullable=False)
     type = Column(String(500), nullable=False)
-
+    geom = Column(Geometry(geometry_type='POINT', srid=26191))
 
 
 
@@ -69,23 +69,44 @@ class ImportedShapefile(Base):
     
 
 
-class PointLayer(Base):
-    __tablename__ = "points_layer"
+class PointsLayer(Base):
+    __tablename__ = 'points_layer'
     id = Column(Integer, primary_key=True, index=True)
-    affaire_id = Column(Integer, nullable=False, index=True)
+    affaire_id = Column(Integer, nullable=False)
     geom = Column(Geometry(geometry_type='POINT', srid=26191))
 
-
-class LigneLayer(Base):
-    __tablename__ = "lignes_layer"
+class PolygonesLayer(Base):
+    __tablename__ = 'polygones_layer'
     id = Column(Integer, primary_key=True, index=True)
-    affaire_id = Column(Integer, nullable=False, index=True)
+    affaire_id = Column(Integer, nullable=False)
+    geom = Column(Geometry(geometry_type='POLYGON', srid=26191))
+
+class LignesLayer(Base):
+    __tablename__ = 'lignes_layer'
+    id = Column(Integer, primary_key=True, index=True)
+    affaire_id = Column(Integer, nullable=False)
     geom = Column(Geometry(geometry_type='LINESTRING', srid=26191))
 
 
-class PolygoneLayer(Base):
-    __tablename__ = "polygones_layer"
+class PointsLayerMec(Base):
+    __tablename__ = 'points_layer_mec'
     id = Column(Integer, primary_key=True, index=True)
-    affaire_id = Column(Integer, nullable=False, index=True)
-    geom = Column(Geometry(geometry_type='POLYGON', srid=26191))
+    affaire_id = Column(Integer, nullable=False)
+    type_mec = Column(String(100), nullable=True)
+    geom = Column(Geometry(geometry_type='POINT', srid=26191))
 
+class PolygonesLayerMec(Base):
+    __tablename__ = 'polygones_layer_mec'
+    id = Column(Integer, primary_key=True, index=True)
+    affaire_id = Column(Integer, nullable=False)
+    type_mec = Column(String(100), nullable=True)
+    geom = Column(Geometry(geometry_type='POLYGON', srid=26191))
+    nature = Column(String(255), nullable=True)
+    consistances = Column(Text, nullable=True)
+
+class LignesLayerMec(Base):
+    __tablename__ = 'lignes_layer_mec'
+    id = Column(Integer, primary_key=True, index=True)
+    affaire_id = Column(Integer, nullable=False)
+    type_mec = Column(String(100), nullable=True)
+    geom = Column(Geometry(geometry_type='LINESTRING', srid=26191))

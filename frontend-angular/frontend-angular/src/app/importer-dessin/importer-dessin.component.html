@@ -7,7 +7,7 @@
           📝 <strong>{{ affaireTitre || 'Affaire en cours' }}</strong>
         </div>
         
-      <div class="tooltip-wrapper">
+      <div class="tooltip-wrapper"> 
         <button class="styled-btn" (click)="importDXF()">
           <i class="fas fa-file-alt"></i> <span>Importer Dessin (Détails)</span>
         </button>
@@ -19,12 +19,30 @@
             <i class="fas fa-project-diagram"></i>
             <span>Dessiner & relier lignes (polygone)</span>
           </button>
+         
+
           <button class="icon-btn warning" (click)="cancelDrawing()" *ngIf="isDrawing">
             <i class="fas fa-times-circle"></i>
             <span>Annuler dessin</span>
           </button>
 
-          
+        
+      </div>
+
+      <div style="margin: 10px 0;">
+          <button class="icon-btn success" (click)="enableArcEditing()" [disabled]="isEditingArc">
+            <i class="fas fa-draw-polygon"></i>
+            <span>Modifier une ligne en arc</span>
+          </button>
+          <button class="icon-btn warning" (click)="disableArcEditing()" *ngIf="isEditingArc">
+            <i class="fas fa-times-circle"></i>
+            <span>Annuler modification</span>
+          </button>   
+          <button class="icon-btn success" (click)="applyArcToSelectedLine()" *ngIf="isEditingArc">
+            <i class="fas fa-wave-square"></i>
+            <span>Adoucir en arc</span>
+          </button>
+    
       </div>
      
       <h1 class="styled-title">
@@ -45,7 +63,7 @@
               <img *ngIf="layer.type === 'polygon'" src="/icons/polygon-icon.svg" class="layer-icon" alt="polygon" />
 
               {{ layer.name }}
-            </label>
+            </label> 
 
           
             <div class="layer-actions">
@@ -62,7 +80,7 @@
                 🗑️ Supprimer un objet
               </button>
 
-
+ 
 
               <button class="edit-btn" 
                     (click)="enableClassification(layer.layer)"
@@ -70,11 +88,11 @@
                 🧬 Classifier
               </button>   
 
-               <button class="edit-btn" 
-                      (click)="saveLayer(layer)">
+              <button class="save-btn" 
+                      (click)="saveLayer(layer)"
+                      [disabled]="editingLayer !== layer.layer">
                 💾 Enregistrer
               </button>
-
             </div>
 
           </div>
@@ -121,6 +139,17 @@
         <label class="layer-checkbox">
           <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />  Satellite
         </label>
+       <!-- Ajout des shapefile layers ici -->
+      <ng-container *ngFor="let shapefile of shapefileLayers; let i = index">
+        <label class="layer-checkbox">
+          <input
+            type="checkbox"
+            [checked]="shapefile.visible"
+            (change)="toggleSpecificLayer(i, getCheckedValue($event))"
+          />
+          {{ shapefile.name }}
+        </label>
+      </ng-container>
         
       </div>
       <div class="top-btn">

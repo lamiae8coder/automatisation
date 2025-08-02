@@ -1,3 +1,5 @@
+
+
 import { Injectable } from '@angular/core';
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -7,53 +9,31 @@ import XYZ from 'ol/source/XYZ';
 import VectorSource from 'ol/source/Vector';
 import { register } from 'ol/proj/proj4';
 import proj4 from 'proj4';
-import { get as getProjection } from 'ol/proj';
-import { Component,ElementRef,ViewChild, AfterViewInit, OnInit } from '@angular/core';
-import { FeatureModalComponent } from '../feature-modal/feature-modal.component'; // adapte le chemin
-
-import OSM from 'ol/source/OSM';
-import { fromLonLat, transform } from 'ol/proj';
-import { toStringXY } from 'ol/coordinate';
-import { saveAs } from 'file-saver';
-import * as shpwrite from 'shp-write';
-import { HttpClient } from '@angular/common/http';
-import GeoJSON from 'ol/format/GeoJSON';
-import { Style } from 'ol/style';
-import { Icon, Style as PointStyle , Fill, Stroke, RegularShape } from 'ol/style';
-import Overlay from 'ol/Overlay';
-import Feature from 'ol/Feature';
-import Point from 'ol/geom/Point';
-import { Circle as CircleStyle } from 'ol/style';
-import Draw from 'ol/interaction/Draw';
+import { fromLonLat, toLonLat } from 'ol/proj';
+import { BehaviorSubject } from 'rxjs';
 import Snap from 'ol/interaction/Snap';
 import Modify from 'ol/interaction/Modify';
-import Polygon from 'ol/geom/Polygon';
-import type { Coordinate } from 'ol/coordinate';
-import * as olSphere from 'ol/sphere';
-import { buffer as bufferOp } from '@turf/turf';  // ajoute turf dans ton projet (npm i @turf/turf)
-import * as turf from '@turf/turf';
-import { Modal } from 'bootstrap';
-import { MatDialog } from '@angular/material/dialog';
-import { getDistance } from 'ol/sphere';
-import { toLonLat } from 'ol/proj';
-import Text from 'ol/style/Text';
-import { AffaireService } from '../services/affaire.service';
-import LineString from 'ol/geom/LineString';
-import { Geometry } from 'ol/geom';
-import { AffaireProgressService } from '../services/affaire-progress.service'; // adapte le chemin selon ta structure
-import {MapStateService}  from '../services/map-state.service';
-
-
+interface ShapefileLayer {
+  name: string;
+  visible: boolean;
+  layer: VectorLayer;
+}
 
 @Injectable({ providedIn: 'root' })
 export class MapService {
   private map!: Map;
-  private vectorLayer!: VectorLayer<any>;
-  private vectorSource!: VectorSource<any>;
-  private baseLayer!: TileLayer<any>;
+  private vectorLayer!: VectorLayer;
+  private vectorSource!: VectorSource;
+  private baseLayer!: TileLayer;
+  modifyInteraction: Modify | null = null;
+  snapInteraction: Snap | null = null;
+  currentMode: string = 'edit';
+
+
+  private shapefileLayersSubject = new BehaviorSubject<ShapefileLayer[]>([]);
+  shapefileLayers$ = this.shapefileLayersSubject.asObservable();
 
   constructor() {
-    // Définir et enregistrer la projection EPSG:26191
     proj4.defs(
       'EPSG:26191',
       '+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs'
@@ -90,7 +70,7 @@ export class MapService {
         })
       });
 
-       if (coordsContainerId) {
+      if (coordsContainerId) {
         this.showCoordinates(coordsContainerId);
       }
     } else {
@@ -100,8 +80,8 @@ export class MapService {
   }
 
   /**
- * Affiche les coordonnées de la souris dans un élément HTML
- */
+   * Affiche les coordonnées de la souris dans un élément HTML
+   */
   showCoordinates(containerId: string) {
     const container = document.getElementById(containerId);
     if (!container) {
@@ -110,26 +90,21 @@ export class MapService {
     }
 
     this.map.on('pointermove', (evt) => {
-      const coord = evt.coordinate;
-      const lonLat = toLonLat(coord);
+      const lonLat = toLonLat(evt.coordinate);
       container.innerText = `Coordonnées : ${lonLat[0].toFixed(5)}, ${lonLat[1].toFixed(5)}`;
     });
 
-    // Vide les coordonnées quand la souris quitte la carte
     this.map.getViewport().addEventListener('mouseout', () => {
       container.innerText = 'Coordonnées : -';
     });
   }
 
-
-
+  /**
+   * Change la visibilité d'une couche de base ou vectorielle
+   */
   toggleLayer(layerName: string, visible: boolean) {
     switch (layerName) {
       case 'osm':
-        if (this.baseLayer ) {
-          this.baseLayer .setVisible(visible);
-        }
-        break;
       case 'base':
       case 'satellite':
         if (this.baseLayer) {
@@ -137,16 +112,87 @@ export class MapService {
         }
         break;
       case 'vector':
-        if (this.vectorLayer) {
-          this.vectorLayer.setVisible(visible);
-        }
+        // if (this.vectorLayer) {
+        //   this.vectorLayer.setVisible(visible);
+        // }
+        this.setVectorLayerVisible(visible);
         break;
       default:
         console.warn(`🔎 Aucun layer trouvé pour le nom : ${layerName}`);
         break;
     }
   }
-  
+
+  setVectorLayerVisible(visible: boolean) {
+    if (this.vectorLayer) {
+      this.vectorLayer.setVisible(visible);
+    }
+
+    if (!visible) {
+      if (this.modifyInteraction) this.map.removeInteraction(this.modifyInteraction);
+      if (this.snapInteraction) this.map.removeInteraction(this.snapInteraction);
+      this.vectorSource.clear();
+    } else {
+      this.addModifySnap();
+    }
+  }
+
+  addModifySnap() {
+    if (this.modifyInteraction) this.map.removeInteraction(this.modifyInteraction);
+    if (this.snapInteraction) this.map.removeInteraction(this.snapInteraction);
+
+    this.modifyInteraction = new Modify({
+      source: this.vectorSource,
+      condition: (event) => {
+        // Empêcher modification sauf si on est dans le bon mode
+        return this.currentMode === 'edit';
+      }
+    });
+
+    this.snapInteraction = new Snap({
+      source: this.vectorSource
+    });
+
+    this.map.addInteraction(this.modifyInteraction);
+    this.map.addInteraction(this.snapInteraction);
+  }
+
+
+
+  /**
+   * Ajoute un shapefile layer s'il n'existe pas déjà
+   */
+  addShapefileLayer(layer: VectorLayer, name: string) {
+    const current = this.shapefileLayersSubject.getValue();
+
+    if (current.some(l => l.name === name)) {
+      console.warn(`🚫 La couche "${name}" existe déjà.`);
+      return;
+    }
+
+    const newLayer: ShapefileLayer = {
+      name,
+      visible: true,
+      layer
+    };
+
+    // Ajoute la couche sur la carte
+    this.map.addLayer(layer);
+
+    this.shapefileLayersSubject.next([...current, newLayer]);
+  }
+
+  /**
+   * Met à jour la visibilité d'une couche shapefile
+   */
+  updateShapefileVisibility(index: number, visible: boolean) {
+    const layers = [...this.shapefileLayersSubject.getValue()];
+    if (layers[index]) {
+      layers[index].visible = visible;
+      layers[index].layer.setVisible(visible);
+      this.shapefileLayersSubject.next(layers);
+    }
+  }
 
   /**
    * Fournit l'instance de la carte
@@ -155,16 +201,10 @@ export class MapService {
     return this.map;
   }
 
-  /**
-   * Fournit la source vectorielle pour ajouter des features
-   */
   getVectorSource(): VectorSource {
     return this.vectorSource;
   }
 
-  /**
-   * Fournit la couche vectorielle
-   */
   getVectorLayer(): VectorLayer {
     return this.vectorLayer;
   }

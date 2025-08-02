@@ -50,6 +50,14 @@ import { ImporterDessinComponent } from './importer-dessin/importer-dessin.compo
 import { NatureDialogComponent } from './nature-dialog/nature-dialog.component';
 import { RouterModule } from '@angular/router';
 import { MapComponent } from './map/map.component';
+import { CreationPieceMecComponent } from './creation-piece-mec/creation-piece-mec.component';
+import { PiecesMecComponent } from './pieces-mec/pieces-mec.component';
+import { CommonModule } from '@angular/common';
+import { MatChipsModule } from '@angular/material/chips';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+
+
+
 
 export const FRENCH_DATE_FORMATS = {
   parse: {
@@ -83,7 +91,9 @@ export const FRENCH_DATE_FORMATS = {
     FeatureModalComponent,
     ImporterDessinComponent,
     NatureDialogComponent,
-    MapComponent
+    MapComponent,
+    CreationPieceMecComponent,
+    PiecesMecComponent
   ],
   imports: [
     BrowserModule,
@@ -138,8 +148,12 @@ export const FRENCH_DATE_FORMATS = {
     MatDialogModule,
     BrowserAnimationsModule,
     ReactiveFormsModule,
-    RouterModule
-    
+    RouterModule,
+    MatChipsModule,
+    MatIconModule,
+    CommonModule,
+    DragDropModule,
+    MatDialogModule
     
   ],
   providers: [
@@ -150,3 +164,4 @@ export const FRENCH_DATE_FORMATS = {
   bootstrap: [AppComponent]
 })
 export class AppModule { }
+

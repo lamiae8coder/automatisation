@@ -1,0 +1,18 @@
+<h2>Visualisation DXF (SVG)</h2>
+<input type="file" (change)="onFileSelected($event)" />
+
+<svg width="800" height="600" style="border: 1px solid gray;">
+  <ng-container *ngFor="let entity of entities">
+    <line *ngIf="entity.type === 'LINE'"
+          [attr.x1]="entity.start[0]"
+          [attr.y1]="600 - entity.start[1]"
+          [attr.x2]="entity.end[0]"
+          [attr.y2]="600 - entity.end[1]"
+          stroke="black" />
+    <circle *ngIf="entity.type === 'CIRCLE'"
+            [attr.cx]="entity.center[0]"
+            [attr.cy]="600 - entity.center[1]"
+            [attr.r]="entity.radius"
+            stroke="red" fill="none" />
+  </ng-container>
+</svg>

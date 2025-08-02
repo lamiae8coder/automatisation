@@ -1,158 +1,55 @@
-<!-- <p>nature-dialog works!</p>
-<h1 mat-dialog-title>Définir la nature</h1>
 
-<div mat-dialog-content>
-  <mat-form-field appearance="fill" style="width: 100%;">
-    <mat-label>Choisir une nature</mat-label>
-    <mat-select [(value)]="selectedNature" (selectionChange)="onNatureChange()">
-      <mat-option *ngFor="let option of data.options" [value]="option">{{ option }}</mat-option>
-      <mat-option value="Autre">Autre...</mat-option>
-    </mat-select>
-  </mat-form-field>
+<div cdkDrag cdkDragRootElement=".draggable-dialog">
 
-  <mat-form-field *ngIf="showCustomInput" appearance="fill" style="width: 100%;">
-    <mat-label>Nature personnalisée</mat-label>
-    <input matInput [(ngModel)]="customNature" />
-  </mat-form-field>
-</div>
-
-<div mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()">Annuler</button>
-  <button mat-raised-button color="primary" (click)="confirm()">Valider</button>
-</div> -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- 
-
-
-
-<h1 mat-dialog-title>Définir la nature</h1>
-
-<div mat-dialog-content>
-  <mat-form-field appearance="fill" style="width: 100%;">
-    <mat-label>Choisir une nature</mat-label>
-    <mat-select [(value)]="selectedNature" (selectionChange)="onNatureChange()">
-      <mat-option *ngFor="let option of data.options" [value]="option">{{ option }}</mat-option>
-      <mat-option value="Autre">Autre...</mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  <mat-form-field *ngIf="showCustomInput" appearance="fill" style="width: 100%;">
-    <mat-label>Nature personnalisée</mat-label>
-    <input matInput [(ngModel)]="customNature" />
-  </mat-form-field>
-
-
-
-
-
-  <mat-form-field *ngIf="data.type === 'polygon'" appearance="fill" style="width: 100%; margin-top: 10px;">
-    <mat-label>Consistance</mat-label>
-    <mat-select [(value)]="selectedConsistance" (selectionChange)="onConsistanceChange($event.value)">
-      <mat-option *ngFor="let item of consistanceOptions" [value]="item">{{ item }}</mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  <div *ngIf="data.type === 'polygon'" style="display: flex; align-items: center; margin-top: 10px;">
-    <button mat-mini-fab color="warn" (click)="decrementNbConsistance()" aria-label="Décrémenter">
-      <mat-icon>remove</mat-icon>
-    </button>
-    <input matInput type="number" [(ngModel)]="nbConsistance" style="width: 60px; margin: 0 10px;" />
-    <button mat-mini-fab color="primary" (click)="incrementNbConsistance()" aria-label="Incrémenter">
-      <mat-icon>add</mat-icon>
-    </button>
+  <div cdkDragHandle class="dialog-header" style="cursor: move;">
+    <h1 mat-dialog-title>Classification</h1>
   </div>
 
-</div>
+  <div mat-dialog-content>
 
-<div mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()">Annuler</button>
-  <button mat-raised-button color="primary" (click)="confirm()">Valider</button>
-</div> -->
+    <mat-form-field appearance="fill" style="width: 100%;">
+      <mat-label>Choisir une nature</mat-label>
+      <mat-select [(value)]="selectedNature" (selectionChange)="onNatureChange()">
+        <mat-option *ngFor="let option of data.options" [value]="option">{{ option }}</mat-option>
+        <mat-option value="Autre">Autre...</mat-option>
+      </mat-select>
+    </mat-form-field>
 
+    <mat-form-field *ngIf="showCustomInput" appearance="fill" style="width: 100%;">
+      <mat-label>Nature personnalisée</mat-label>
+      <input matInput [(ngModel)]="customNature" />
+    </mat-form-field>
 
+    <div *ngIf="data.type === 'polygon'" style="margin-top: 20px;">
+      <h3>Consistances</h3>
+      <table style="width: 100%;">
+        <tr *ngFor="let cons of consistances">
+          <td>{{ cons.type }}</td>
+          <td>
+            <button mat-mini-fab color="warn" (click)="decrement(cons)">
+              <mat-icon>remove</mat-icon>
+            </button>
+          </td>
+          <td>
+            <input matInput type="number" [(ngModel)]="cons.nb_consistance" style="width: 60px; text-align:center;" />
+          </td>
+          <td>
+            <button mat-mini-fab color="primary" (click)="increment(cons)">
+              <mat-icon>add</mat-icon>
+            </button>
+          </td>
+        </tr>
+      </table>
+    </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h1 mat-dialog-title>Définir la nature</h1>
-
-<div mat-dialog-content>
-
-  <!-- 🎯 Nature -->
-  <mat-form-field appearance="fill" style="width: 100%;">
-    <mat-label>Choisir une nature</mat-label>
-    <mat-select [(value)]="selectedNature" (selectionChange)="onNatureChange()">
-      <mat-option *ngFor="let option of data.options" [value]="option">{{ option }}</mat-option>
-      <mat-option value="Autre">Autre...</mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  <!-- Si Autre -->
-  <mat-form-field *ngIf="showCustomInput" appearance="fill" style="width: 100%;">
-    <mat-label>Nature personnalisée</mat-label>
-    <input matInput [(ngModel)]="customNature" />
-  </mat-form-field>
-
-  <!-- 🔷 Consistances -->
-  <div *ngIf="data.type === 'polygon'" style="margin-top: 20px;">
-    <h3>Consistances</h3>
-    <table style="width: 100%;">
-      <tr *ngFor="let cons of consistances">
-        <td>{{ cons.type }}</td>
-        <td>
-          <button mat-mini-fab color="warn" (click)="decrement(cons)">
-            <mat-icon>remove</mat-icon>
-          </button>
-        </td>
-        <td>
-          <input matInput type="number" [(ngModel)]="cons.nb_consistance" style="width: 60px; text-align:center;" />
-        </td>
-        <td>
-          <button mat-mini-fab color="primary" (click)="increment(cons)">
-            <mat-icon>add</mat-icon>
-          </button>
-        </td>
-      </tr>
-    </table>
   </div>
 
-</div>
+  <div mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Annuler</button>
+    <button mat-raised-button color="primary" (click)="confirm()">Valider</button>
+  </div>
 
-<div mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()">Annuler</button>
-  <button mat-raised-button color="primary" (click)="confirm()">Valider</button>
-</div>
+</div> 
+
+
+

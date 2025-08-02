@@ -1,0 +1,14 @@
+/* Pour déplacer la boîte entière */
+::ng-deep .draggable-dialog .mat-dialog-container {
+  position: absolute !important;
+}
+
+/* Style du header draggable */
+.dialog-header {
+  cursor: move;
+  padding: 2px;
+  background-color: #4e8dec;
+  color: white;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+}

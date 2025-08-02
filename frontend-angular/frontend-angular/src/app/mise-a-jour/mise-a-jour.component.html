@@ -34,13 +34,7 @@
         <input matInput formControlName="situationar" required>
       </mat-form-field>
 
-    
-    
-      <!-- ✅ Choix du type de date -->
-      <mat-radio-group [(ngModel)]="dateType" name="dateType">
-        <mat-radio-button value="complete">Date complète (Jour/Mois/Année)</mat-radio-button>
-        <mat-radio-button value="monthYear">Date partielle (Mois/Année)</mat-radio-button>
-      </mat-radio-group>
+  
 
       <!-- ✅ Date complète -->
       <div *ngIf="dateType === 'complete'">
@@ -52,25 +46,8 @@
         </mat-form-field>
       </div>
 
-      <!-- ✅ Mois / Année -->
-      <div *ngIf="dateType === 'monthYear'">
-        <mat-form-field appearance="outline">
-          <mat-label>Date partielle (Mois/Année)</mat-label>
-          <input matInput [value]="monthYearDisplay" readonly (click)="monthPicker.open()">
-          <mat-datepicker-toggle matSuffix [for]="monthPicker"></mat-datepicker-toggle>
-          <mat-datepicker
-            #monthPicker
-            startView="multi-year"
-            (monthSelected)="chosenMonthHandler($event, monthPicker)"
-            panelClass="month-picker"
-          ></mat-datepicker>
-        </mat-form-field>
-      </div>
-      
-
-
-
-
+     
+     
 
     </div>
   </mat-card>
@@ -87,6 +64,17 @@
       <mat-form-field appearance="outline">
         <mat-label>Mappe de repérage (à l'extérieur du cadre)</mat-label>
         <input matInput formControlName="mappereperage" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Echelle Mappe</mat-label>
+        <input type="text" matInput formControlName="consistance" [matAutocomplete]="auto" required>
+
+        <mat-autocomplete #auto="matAutocomplete">
+            <mat-option *ngFor="let consistance of consistances" [value]="consistance">
+            {{ consistance }}
+            </mat-option>
+        </mat-autocomplete> 
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -128,25 +116,65 @@
         <mat-datepicker #picker2></mat-datepicker>
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <!-- <mat-form-field appearance="outline">
         <mat-label>Service du Cadastre</mat-label>
         <mat-select formControlName="servicecadastre" required>
           <mat-option *ngFor="let service of services" [value]="service">{{ service }}</mat-option>
         </mat-select>
-      </mat-form-field>
+      </mat-form-field> -->
 
-     
 
       <mat-form-field appearance="outline">
-        <mat-label>Consistance</mat-label>
-        <input type="text" matInput formControlName="consistance" [matAutocomplete]="auto" required>
+        <mat-label>Service du Cadastre</mat-label>
+        <input
+          type="text"
+          matInput
+          [matAutocomplete]="autoService"
+          formControlName="servicecadastre"
+          (keydown.enter)="addServiceIfNotExists()"
+          (blur)="addServiceIfNotExists()"
+        />
 
-        <mat-autocomplete #auto="matAutocomplete">
-            <mat-option *ngFor="let consistance of consistances" [value]="consistance">
-            {{ consistance }}
-            </mat-option>
-        </mat-autocomplete> 
+        <button
+          type="button"
+          mat-icon-button
+          matSuffix
+          aria-label="Supprimer le service sélectionné"
+          (click)="removeCurrentService()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+
+        <mat-autocomplete #autoService="matAutocomplete" (optionSelected)="addServiceIfNotExists(true)">
+          <mat-option *ngFor="let service of filteredServices | async" [value]="service">
+            {{ service }}
+          </mat-option>
+        </mat-autocomplete>
       </mat-form-field>
+
+
+      <!-- <mat-form-field appearance="outline">
+        <mat-label>Service du Cadastre</mat-label>
+        <input
+          type="text"
+          matInput
+          formControlName="servicecadastre"
+          [matAutocomplete]="autoService"
+          (blur)="addServiceIfNotExists()"
+          required
+        >
+
+        <mat-autocomplete #autoService="matAutocomplete" (optionSelected)="addServiceIfNotExists()">
+          <mat-option *ngFor="let service of filteredServices | async" [value]="service">
+            {{ service }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field> -->
+
+   
+          
+
+      
 
 
       <mat-form-field appearance="outline">  
@@ -158,7 +186,7 @@
   </mat-card>
 
   <mat-card class="section-card">
-    <mat-card-title>EMPIÉTEMENT ET PROPRIÉTAIRE</mat-card-title>
+    <mat-card-title>EMPIÉTEMENT</mat-card-title>
     <div class="form-grid">
 
       <mat-form-field appearance="outline">
@@ -178,6 +206,19 @@
      
 
     
+      
+
+    </div>
+  </mat-card>
+
+  <mat-card class="section-card">
+    <mat-card-title>PROPRIÉTAIRE</mat-card-title>
+    <div class="form-grid">
+
+      
+     
+
+    
       <mat-form-field appearance="outline">
         <mat-label>Nom et Prenom</mat-label>
         <input matInput formControlName="nometprenom" required>
@@ -186,7 +227,7 @@
 
       <mat-form-field appearance="outline">
         <mat-label>CIN</mat-label>
-        <input matInput formControlName="cin" required>
+        <input matInput formControlName="cin">
       </mat-form-field>
 
       <mat-form-field appearance="outline">

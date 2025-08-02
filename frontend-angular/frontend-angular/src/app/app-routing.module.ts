@@ -16,6 +16,8 @@ import { DessinExterieurComponent } from './dessin-exterieur/dessin-exterieur.co
 import { AddAffaireComponent } from './add-affaire/add-affaire.component';
 import { ImporterDessinComponent } from './importer-dessin/importer-dessin.component';
 import { Step2AccessGuard } from './guards/step2-access.guard';  
+import { CreationPieceMecComponent } from './creation-piece-mec/creation-piece-mec.component';
+import { PiecesMecComponent } from './pieces-mec/pieces-mec.component';
 
 // const routes: Routes = [
 //   {path : "", component : LoginComponent},
@@ -115,6 +117,18 @@ const routes: Routes = [
             canActivate: [AuthorizationGuard],
             data: { roles: ['ADMIN'] }
           },
+          {
+            path: "creation_piece_mec",
+            component: CreationPieceMecComponent,
+            canActivate: [AuthorizationGuard],
+            data: { roles: ['ADMIN'] }
+          }, 
+          {
+            path: "pieces_mec",
+            component: PiecesMecComponent,
+            canActivate: [AuthorizationGuard],
+            data: { roles: ['ADMIN'] }
+          }, 
           {
             path: "",
             redirectTo: "mise-a-jour",

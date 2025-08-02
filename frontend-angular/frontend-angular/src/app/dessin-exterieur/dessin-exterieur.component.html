@@ -58,20 +58,21 @@
       </div>
 
       <div class="top-btn">
-        📐
+         
         <button (click)="toggleDistanceMeasure()">
           {{ isMeasuringDistance ? 'Annuler' : 'Mesurer distance' }}
         </button>
         <span *ngIf="distanceResult">{{ distanceResult }} m</span>
       </div>
 
-      <div class="top-btn layers-container">
+      <div class="top-btn layers-container"> 
         <label class="layer-checkbox">
           <input type="checkbox" checked (change)="toggleLayer('osm', getCheckedValue($event))" />  Satellite
         </label>
         <ng-container *ngFor="let shapefile of shapefileLayers; let i = index">
           <label class="layer-checkbox">
-            <input type="checkbox" [checked]="shapefile.visible" (change)="toggleSpecificLayer(i, getCheckedValue($event))" />
+            <input type="checkbox" [checked]="shapefile.visible"
+            (change)="toggleSpecificLayer(i, getCheckedValue($event))" />
             {{ shapefile.name }}
           </label>
         </ng-container>

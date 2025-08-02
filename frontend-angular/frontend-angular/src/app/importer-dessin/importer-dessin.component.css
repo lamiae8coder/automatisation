@@ -230,7 +230,7 @@
 .coord-card h3 {
   font-size: 18px;
   margin-bottom: 16px;
-  color: #333;
+  color: #333; 
 }
 
 /* Ligne des coordonnées */
@@ -399,4 +399,11 @@
 
 .layer-entry {
   margin: 5px 0;
+}
+/* Permettre au container du dialog d'être positionné absolu et déplaçable */
+.draggable-dialog {
+  position: absolute !important; /* important pour pouvoir déplacer */
+  cursor: move; /* pour indiquer que c’est déplaçable */
+  /* Optionnel : ajouter une ombre */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
